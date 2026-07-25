@@ -25,7 +25,7 @@ export function Header() {
         <Link href="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2">
           <Gem className="h-5 w-5 shrink-0 text-imperial-gold" strokeWidth={1.5} />
           <span className="truncate font-display text-base tracking-wide text-imperial-black sm:text-lg">
-            The Imperial Edit
+            The Imperial Collection
           </span>
         </Link>
 

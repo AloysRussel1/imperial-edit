@@ -4,7 +4,7 @@ import { AdminDashboard } from "@/components/admin/admin-dashboard";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Espace vendeur — The Imperial Edit",
+  title: "Espace vendeur — The Imperial Collection",
   description: "Vue d'ensemble des commandes, acomptes et demandes de sourcing.",
 };
 

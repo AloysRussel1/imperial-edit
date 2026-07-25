@@ -10,7 +10,7 @@ export function HeroSection() {
     <section className="relative flex min-h-[92vh] items-center overflow-hidden text-imperial-ivory sm:min-h-[88vh] lg:min-h-[82vh]">
       <Image
         src={HERO_IMAGE_URL}
-        alt="Univers The Imperial Edit — mode et accessoires de luxe"
+        alt="Univers The Imperial Collection — mode et accessoires de luxe"
         fill
         priority
         sizes="100vw"

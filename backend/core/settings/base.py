@@ -118,8 +118,8 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "The Imperial Edit API",
-    "DESCRIPTION": "API back-office & storefront pour The Imperial Edit.",
+    "TITLE": "The Imperial Collection API",
+    "DESCRIPTION": "API back-office & storefront pour The Imperial Collection.",
     "VERSION": "1.0.0",
 }
 
@@ -170,7 +170,7 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="The Imperial Edit <no-reply@imperialedit.com>")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="The Imperial Collection <no-reply@imperialedit.com>")
 
 # ==== Frontend (liens embarqués dans les e-mails transactionnels) ====
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
@@ -216,16 +216,16 @@ else:
 
 # ==== Admin Django — thème Jazzmin (Noir & Or, cohérent avec la vitrine) ====
 JAZZMIN_SETTINGS = {
-    "site_title": "The Imperial Edit — Administration",
-    "site_header": "The Imperial Edit",
-    "site_brand": "The Imperial Edit",
+    "site_title": "Imperial Collection - Administration",
+    "site_header": "Imperial Collection - Administration",
+    "site_brand": "Imperial Collection",
     "site_logo": "admin/img/logo.png",
     "site_logo_classes": "elevation-0",
     "site_icon": "admin/img/favicon.png",
     "login_logo": "admin/img/logo.png",
     "login_logo_dark": "admin/img/logo.png",
-    "welcome_sign": "Bienvenue dans l'espace d'administration The Imperial Edit",
-    "copyright": "The Imperial Edit",
+    "welcome_sign": "Bienvenue dans l'espace d'administration Imperial Collection",
+    "copyright": "Imperial Collection",
     "search_model": ["orders.Order", "sourcing.SourcingRequest", "products.Product", "payments.Transaction"],
     "user_avatar": None,
     "topmenu_links": [

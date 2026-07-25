@@ -4,7 +4,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "FAQ — Livraison & Paiement — The Imperial Edit",
+  title: "FAQ — Livraison & Paiement — The Imperial Collection",
   description: "Toutes les réponses sur la livraison France-Cameroun et les modes de paiement acceptés.",
 };
 

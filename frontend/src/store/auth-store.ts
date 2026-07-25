@@ -42,6 +42,6 @@ export const useAuthStore = create<AuthState>()(
       setAccessToken: (token) => set({ accessToken: token }),
       setHasHydrated: (value) => set({ _hasHydrated: value }),
     }),
-    { name: "imperial-edit-auth", skipHydration: true }
+    { name: "imperial-collection-auth", skipHydration: true }
   )
 );

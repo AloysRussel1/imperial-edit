@@ -4,7 +4,7 @@ import { SectionHeading } from "@/components/common/section-heading";
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 
 export const metadata: Metadata = {
-  title: "Mon espace — The Imperial Edit",
+  title: "Mon espace — The Imperial Collection",
   description: "Suivez vos commandes et vos demandes de sourcing.",
 };
 

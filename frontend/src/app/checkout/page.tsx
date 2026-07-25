@@ -4,7 +4,7 @@ import { CheckoutFlow } from "@/components/checkout/checkout-flow";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Commande — The Imperial Edit",
+  title: "Commande — The Imperial Collection",
   description: "Finalisez votre commande : livraison, acompte et paiement sécurisé.",
 };
 

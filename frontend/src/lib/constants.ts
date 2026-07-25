@@ -1,6 +1,6 @@
 import type { ProductType, StockStatus } from "@/types";
 
-export const SITE_NAME = "The Imperial Edit";
+export const SITE_NAME = "The Imperial Collection";
 
 export const WHATSAPP_NUMBER = "237600000000";
 

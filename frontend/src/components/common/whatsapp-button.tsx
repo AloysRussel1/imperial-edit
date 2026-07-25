@@ -12,7 +12,7 @@ interface WhatsAppButtonProps {
 }
 
 export function WhatsAppButton({
-  message = "Bonjour, je souhaite en savoir plus sur The Imperial Edit.",
+  message = "Bonjour, je souhaite en savoir plus sur The Imperial Collection.",
   className,
   variant = "inline",
   children,
@@ -25,7 +25,7 @@ export function WhatsAppButton({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Contacter The Imperial Edit sur WhatsApp"
+        aria-label="Contacter The Imperial Collection sur WhatsApp"
         className={cn(
           "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-elevated transition-transform hover:scale-105",
           className

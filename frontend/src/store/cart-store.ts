@@ -50,7 +50,7 @@ export const useCartStore = create<CartState>()(
         })),
       clear: () => set({ items: [] }),
     }),
-    { name: "imperial-edit-cart", skipHydration: true }
+    { name: "imperial-collection-cart", skipHydration: true }
   )
 );
 

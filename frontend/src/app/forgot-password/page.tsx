@@ -4,8 +4,8 @@ import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Mot de passe oublié — The Imperial Edit",
-  description: "Réinitialisez le mot de passe de votre compte The Imperial Edit.",
+  title: "Mot de passe oublié — The Imperial Collection",
+  description: "Réinitialisez le mot de passe de votre compte The Imperial Collection.",
 };
 
 export default function ForgotPasswordPage() {

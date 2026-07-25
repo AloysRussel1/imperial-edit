@@ -8,6 +8,13 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+# Jazzmin lit ses propres réglages depuis JAZZMIN_SETTINGS (core/settings/base.py),
+# mais "index_title" (l'intitulé de la page d'accueil de l'admin natif Django)
+# n'a pas d'équivalent dans ce dictionnaire : on le pose directement ici.
+admin.site.site_header = "Imperial Collection - Administration"
+admin.site.site_title = "Imperial Collection - Administration"
+admin.site.index_title = "Imperial Collection - Administration"
+
 api_v1_patterns = [
     path("auth/", include("apps.users.urls")),
     path("products/", include("apps.products.urls")),

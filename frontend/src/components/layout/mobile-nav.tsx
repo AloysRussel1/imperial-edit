@@ -40,7 +40,7 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="flex w-full max-w-xs flex-col sm:max-w-sm">
         <SheetHeader>
-          <SheetTitle>The Imperial Edit</SheetTitle>
+          <SheetTitle>The Imperial Collection</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
           {NAV_LINKS.map((link) => (

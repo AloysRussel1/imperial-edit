@@ -15,6 +15,6 @@ export const useLanguageStore = create<LanguageState>()(
       language: "fr",
       setLanguage: (language) => set({ language }),
     }),
-    { name: "imperial-edit-language", skipHydration: true }
+    { name: "imperial-collection-language", skipHydration: true }
   )
 );

@@ -4,7 +4,7 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Créer un compte — The Imperial Edit",
+  title: "Créer un compte — The Imperial Collection",
   description: "Créez votre compte pour commander et suivre vos demandes de sourcing.",
 };
 

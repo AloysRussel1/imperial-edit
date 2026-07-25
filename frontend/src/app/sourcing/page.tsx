@@ -5,7 +5,7 @@ import { SectionHeading } from "@/components/common/section-heading";
 import { SourcingFlow } from "@/components/sourcing/sourcing-flow";
 
 export const metadata: Metadata = {
-  title: "Sourcing sur photo — The Imperial Edit",
+  title: "Sourcing sur photo — The Imperial Collection",
   description: "Confiez-nous une photo, nous localisons et livrons la pièce jusqu'au Cameroun.",
 };
 

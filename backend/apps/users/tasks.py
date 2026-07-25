@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 @shared_task
 def send_welcome_email(user_email: str) -> None:
     send_mail(
-        subject="Bienvenue chez The Imperial Edit",
+        subject="Bienvenue chez The Imperial Collection",
         message="Merci de votre inscription. Votre univers Impérial Collection vous attend.",
         from_email=None,
         recipient_list=[user_email],
@@ -16,7 +16,7 @@ def send_welcome_email(user_email: str) -> None:
 @shared_task
 def send_password_reset_email(user_email: str, reset_url: str) -> None:
     send_mail(
-        subject="Réinitialisation de votre mot de passe — The Imperial Edit",
+        subject="Réinitialisation de votre mot de passe — The Imperial Collection",
         message=(
             "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
             f"Cliquez sur ce lien pour choisir un nouveau mot de passe : {reset_url}\n\n"

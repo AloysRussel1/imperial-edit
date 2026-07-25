@@ -4,8 +4,8 @@ import { Gem, Handshake, MapPin } from "lucide-react";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "À Propos — The Imperial Edit",
-  description: "L'histoire et les valeurs de The Imperial Edit, maison de mode et de sourcing France-Cameroun.",
+  title: "À Propos — The Imperial Collection",
+  description: "L'histoire et les valeurs de The Imperial Collection, maison de mode et de sourcing France-Cameroun.",
 };
 
 const VALUES = [
@@ -33,8 +33,8 @@ export default function AboutPage() {
         <div className="container text-center">
           <SectionHeading
             eyebrow="La Maison"
-            title="À Propos de The Imperial Edit"
-            description="Née de la volonté de rapprocher la mode européenne des envies camerounaises, The Imperial Edit sélectionne, négocie et achemine des pièces d'exception jusqu'à vous."
+            title="À Propos de The Imperial Collection"
+            description="Née de la volonté de rapprocher la mode européenne des envies camerounaises, The Imperial Collection sélectionne, négocie et achemine des pièces d'exception jusqu'à vous."
             light
           />
         </div>
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <section className="bg-imperial-ivory py-16">
         <div className="container max-w-3xl space-y-6 text-imperial-black/75">
           <p>
-            The Imperial Edit est une maison de mode et de sourcing basée en France, fondée pour offrir à une
+            The Imperial Collection est une maison de mode et de sourcing basée en France, fondée pour offrir à une
             clientèle exigeante au Cameroun un accès direct à des pièces de qualité premium — sacs, souliers,
             prêt-à-porter et parfums — habituellement difficiles à obtenir sur place.
           </p>

@@ -5,8 +5,8 @@ import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Réinitialiser le mot de passe — The Imperial Edit",
-  description: "Choisissez un nouveau mot de passe pour votre compte The Imperial Edit.",
+  title: "Réinitialiser le mot de passe — The Imperial Collection",
+  description: "Choisissez un nouveau mot de passe pour votre compte The Imperial Collection.",
 };
 
 export default function ResetPasswordPage() {

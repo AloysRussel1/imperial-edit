@@ -5,7 +5,7 @@ import { CheckoutSuccessContent } from "@/components/checkout/checkout-success-c
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Commande confirmée — The Imperial Edit",
+  title: "Commande confirmée — The Imperial Collection",
   description: "Votre commande a bien été enregistrée.",
 };
 

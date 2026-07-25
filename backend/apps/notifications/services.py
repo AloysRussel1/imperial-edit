@@ -139,7 +139,7 @@ def notify_order_deposit_paid(order) -> None:
     whatsapp_message = (
         f"Bonjour {first_name}, votre acompte pour la commande {order.order_number} a bien été reçu "
         f"({order.amount_paid_xaf} {order.currency}). Solde restant dû à la livraison : "
-        f"{order.amount_remaining_xaf} {order.currency}. Merci de votre confiance — The Imperial Edit."
+        f"{order.amount_remaining_xaf} {order.currency}. Merci de votre confiance — The Imperial Collection."
     )
     send_whatsapp_message(order.customer.whatsapp_number, whatsapp_message, order=order)
 
@@ -149,7 +149,7 @@ def notify_order_deposit_paid(order) -> None:
         f"Montant réglé : {order.amount_paid_xaf} {order.currency}\n"
         f"Solde restant dû à la livraison : {order.amount_remaining_xaf} {order.currency}\n"
         f"Ville de livraison : {order.delivery_city}\n\n"
-        f"Merci de votre confiance,\nL'équipe The Imperial Edit"
+        f"Merci de votre confiance,\nL'équipe The Imperial Collection"
     )
     send_transactional_email(
         to_email=order.customer.email,
@@ -177,7 +177,7 @@ def notify_sourcing_quote_sent(sourcing_request) -> None:
         f"Bonne nouvelle : nous avons localisé « {article} ».\n\n"
         f"Prix proposé : {sourcing_request.quoted_price_xaf} XAF{notes}\n\n"
         f"Connectez-vous à votre espace client pour valider la commande et régler l'acompte.\n\n"
-        f"L'équipe The Imperial Edit"
+        f"L'équipe The Imperial Collection"
     )
     send_transactional_email(
         to_email=sourcing_request.customer.email,

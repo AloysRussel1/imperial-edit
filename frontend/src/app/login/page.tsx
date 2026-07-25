@@ -5,8 +5,8 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SectionHeading } from "@/components/common/section-heading";
 
 export const metadata: Metadata = {
-  title: "Connexion — The Imperial Edit",
-  description: "Connectez-vous à votre espace The Imperial Edit.",
+  title: "Connexion — The Imperial Collection",
+  description: "Connectez-vous à votre espace The Imperial Collection.",
 };
 
 export default function LoginPage() {

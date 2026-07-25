@@ -22,9 +22,18 @@ const body = Inter({
   display: "swap",
 });
 
+const SITE_DESCRIPTION = "Imperial Collection — boutique de mode et sourcing de luxe, France ↔ Cameroun.";
+
 export const metadata: Metadata = {
-  title: "The Imperial Edit",
-  description: "Impérial Collection — boutique de mode et sourcing de luxe, France ↔ Cameroun.",
+  title: "Imperial Collection",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: "Imperial Collection",
+    description: SITE_DESCRIPTION,
+    siteName: "Imperial Collection",
+    locale: "fr_FR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

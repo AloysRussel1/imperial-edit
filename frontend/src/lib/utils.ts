@@ -23,7 +23,7 @@ export function formatPrice(amountXaf: number, currency: Currency = "XAF"): stri
 
 export function buildWhatsAppLink(phoneNumber: string, orderNumber: string, status: string): string {
   const message = encodeURIComponent(
-    `Bonjour, concernant votre commande ${orderNumber} (statut: ${status}) chez The Imperial Edit.`
+    `Bonjour, concernant votre commande ${orderNumber} (statut: ${status}) chez The Imperial Collection.`
   );
   return `https://wa.me/${phoneNumber}?text=${message}`;
 }
