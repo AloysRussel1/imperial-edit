@@ -13,8 +13,8 @@ import { Label } from "@/components/ui/label";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
 import { ImageDropzone } from "@/components/sourcing/image-dropzone";
+import { useTranslation } from "@/hooks/use-translation";
 import { submitSourcingRequest } from "@/lib/api";
-import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import { SOURCING_STATUS_META } from "@/lib/order-status";
 import { useAuthStore } from "@/store/auth-store";
 import { useSourcingStore } from "@/store/sourcing-store";
@@ -23,6 +23,7 @@ import type { ApiSourcingRequest, ProductType } from "@/types";
 const CATEGORY_OPTIONS: (ProductType | "other")[] = ["bags", "shoes", "clothing", "perfumes", "watches", "other"];
 
 export function SourcingFlow() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const addRequest = useSourcingStore((state) => state.addRequest);
 
@@ -84,9 +85,9 @@ export function SourcingFlow() {
       resetForm();
     } catch (err) {
       if (err instanceof AxiosError && err.response?.status === 401) {
-        setError("Votre session a expiré, merci de vous reconnecter.");
+        setError(t("sourcing.sessionExpired"));
       } else {
-        setError("Impossible d'envoyer votre demande pour le moment. Réessayez dans un instant.");
+        setError(t("sourcing.genericError"));
       }
     } finally {
       setSubmitting(false);
@@ -97,16 +98,13 @@ export function SourcingFlow() {
     return (
       <div className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-8 text-center">
         <LogIn className="mx-auto h-8 w-8 text-imperial-gold" />
-        <p className="text-imperial-black/70">
-          Connectez-vous pour envoyer une demande de sourcing — nous associons chaque demande à votre compte
-          pour vous transmettre le devis et suivre son avancement.
-        </p>
+        <p className="text-imperial-black/70">{t("sourcing.guestPrompt")}</p>
         <div className="flex justify-center gap-3">
           <Button asChild variant="gold">
-            <Link href="/login?next=/sourcing">Se connecter</Link>
+            <Link href="/login?next=/sourcing">{t("sourcing.login")}</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/register">Créer un compte</Link>
+            <Link href="/register">{t("sourcing.createAccount")}</Link>
           </Button>
         </div>
       </div>
@@ -119,22 +117,21 @@ export function SourcingFlow() {
       <div className="space-y-6 rounded-lg border border-imperial-gold/30 bg-imperial-gold/5 p-6 text-center">
         <CheckCircle2 className="mx-auto h-10 w-10 text-imperial-gold" strokeWidth={1.5} />
         <div>
-          <h3 className="font-display text-xl text-imperial-black">Demande envoyée avec succès</h3>
+          <h3 className="font-display text-xl text-imperial-black">{t("sourcing.successTitle")}</h3>
           <p className="mt-1 text-sm text-imperial-black/60">
-            Référence <span className="font-medium text-imperial-black">#{submitted.id.slice(0, 8)}</span> —
-            notre équipe l&apos;examine et reviendra vers vous avec un devis.
+            {t("sourcing.successBody", { ref: submitted.id.slice(0, 8) })}
           </p>
         </div>
 
         <Badge variant={statusMeta.variant} className="mx-auto">
-          {statusMeta.label}
+          {t(statusMeta.labelKey)}
         </Badge>
 
         <div className="mx-auto flex max-w-sm gap-4 rounded-lg border border-imperial-black/10 bg-white p-4 text-left">
           {submitted.reference_image ? (
             <Image
               src={submitted.reference_image}
-              alt="Article recherché"
+              alt={t("sourcing.referenceItem")}
               width={80}
               height={80}
               className="h-20 w-20 shrink-0 rounded-md object-cover"
@@ -144,15 +141,15 @@ export function SourcingFlow() {
           )}
           <div className="space-y-1 text-sm">
             <p className="font-medium text-imperial-black">
-              {submitted.product_name || PRODUCT_TYPE_LABELS[submitted.category] || "Article recherché"}
+              {submitted.product_name || t(`productTypes.${submitted.category}`) || t("sourcing.referenceItem")}
             </p>
             <p className="text-imperial-black/50">
-              {PRODUCT_TYPE_LABELS[submitted.category] ?? submitted.category}
+              {t(`productTypes.${submitted.category}`)}
               {submitted.size_or_shoe ? ` · ${submitted.size_or_shoe}` : ""}
             </p>
             {submitted.budget_max_xaf ? (
               <p className="text-imperial-black/50">
-                Budget max : <Price amountXaf={Number(submitted.budget_max_xaf)} />
+                {t("sourcing.budgetMax")} : <Price amountXaf={Number(submitted.budget_max_xaf)} />
               </p>
             ) : null}
           </div>
@@ -160,10 +157,10 @@ export function SourcingFlow() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button asChild variant="gold">
-            <Link href="/dashboard">Suivre ma demande</Link>
+            <Link href="/dashboard">{t("sourcing.trackRequest")}</Link>
           </Button>
           <Button variant="outline" onClick={() => setSubmitted(null)}>
-            Nouvelle demande
+            {t("sourcing.newRequest")}
           </Button>
         </div>
       </div>
@@ -173,7 +170,7 @@ export function SourcingFlow() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-imperial-black/10 bg-white p-6">
       <div className="space-y-1.5">
-        <Label>Photo de l&apos;article recherché</Label>
+        <Label>{t("sourcing.photoLabel")}</Label>
         <ImageDropzone
           previewUrl={imagePreview}
           onChange={(file, preview) => {
@@ -184,18 +181,18 @@ export function SourcingFlow() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sourcing-product-name">Nom du produit (si connu)</Label>
+        <Label htmlFor="sourcing-product-name">{t("sourcing.productNameLabel")}</Label>
         <Input
           id="sourcing-product-name"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-          placeholder="Ex. Sac cabas mini"
+          placeholder={t("sourcing.productNamePlaceholder")}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
-          <Label htmlFor="sourcing-category">Catégorie</Label>
+          <Label htmlFor="sourcing-category">{t("sourcing.categoryLabel")}</Label>
           <select
             id="sourcing-category"
             value={category}
@@ -204,29 +201,29 @@ export function SourcingFlow() {
           >
             {CATEGORY_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {PRODUCT_TYPE_LABELS[option] ?? option}
+                {t(`productTypes.${option}`)}
               </option>
             ))}
           </select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="sourcing-size">Taille / pointure</Label>
+          <Label htmlFor="sourcing-size">{t("sourcing.sizeLabel")}</Label>
           <Input
             id="sourcing-size"
             value={sizeOrShoe}
             onChange={(e) => setSizeOrShoe(e.target.value)}
-            placeholder="Ex. 42 ou M"
+            placeholder={t("sourcing.sizePlaceholder")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="sourcing-budget">Budget max (XAF)</Label>
+          <Label htmlFor="sourcing-budget">{t("sourcing.budgetLabel")}</Label>
           <Input
             id="sourcing-budget"
             type="number"
             min={0}
             value={budgetMax}
             onChange={(e) => setBudgetMax(e.target.value)}
-            placeholder="Ex. 200000"
+            placeholder={t("sourcing.budgetPlaceholder")}
           />
           {budgetMax ? (
             <p className="text-xs text-imperial-black/45">
@@ -237,28 +234,25 @@ export function SourcingFlow() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sourcing-description">Description &amp; commentaires</Label>
+        <Label htmlFor="sourcing-description">{t("sourcing.descriptionLabel")}</Label>
         <textarea
           id="sourcing-description"
           required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          placeholder="Marque, modèle, couleur, contexte de la photo…"
+          placeholder={t("sourcing.descriptionPlaceholder")}
           className="flex w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-sm text-imperial-black placeholder:text-imperial-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold"
         />
       </div>
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
-      <p className="text-xs text-imperial-black/50">
-        Votre demande est transmise à notre équipe, qui l&apos;analyse et revient vers vous avec un devis sous
-        48h.
-      </p>
+      <p className="text-xs text-imperial-black/50">{t("sourcing.disclaimer")}</p>
 
       <Button type="submit" variant="gold" size="lg" className="w-full" disabled={submitting}>
         <Send className="mr-2 h-4 w-4" />
-        {submitting ? "Envoi en cours…" : "Envoyer ma demande de sourcing"}
+        {submitting ? t("sourcing.submitting") : t("sourcing.submit")}
       </Button>
     </form>
   );

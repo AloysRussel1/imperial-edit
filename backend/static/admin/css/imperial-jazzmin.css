@@ -1,0 +1,78 @@
+/*
+ * Surcouche de thème pour l'admin Django (Jazzmin) — aligne les teintes
+ * exactes de la vitrine The Imperial Edit (or #C9A24B, charcoal #211F1D,
+ * noir #0B0B0C) par-dessus le thème "darkly" + accent "warning" de Jazzmin.
+ */
+
+:root {
+  --ie-gold: #c9a24b;
+  --ie-gold-light: #e4c87a;
+  --ie-charcoal: #211f1d;
+  --ie-black: #0b0b0c;
+}
+
+body.theme-darkly,
+.main-sidebar,
+.main-header.navbar {
+  background-color: var(--ie-black) !important;
+}
+
+.main-sidebar,
+.sidebar-dark-warning .sidebar {
+  background-color: var(--ie-charcoal) !important;
+}
+
+.brand-link {
+  border-bottom: 1px solid rgba(201, 162, 75, 0.25) !important;
+}
+
+.brand-text {
+  color: var(--ie-gold-light) !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Liens, boutons et éléments actifs en accent doré plutôt que l'ambre par défaut de Bootstrap. */
+.nav-sidebar > .nav-item > .nav-link.active,
+.nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
+  background-color: rgba(201, 162, 75, 0.16) !important;
+  border-left: 3px solid var(--ie-gold);
+  color: var(--ie-gold-light) !important;
+}
+
+.nav-sidebar .nav-link:hover {
+  color: var(--ie-gold-light) !important;
+}
+
+.btn-warning,
+.badge-warning {
+  background-color: var(--ie-gold) !important;
+  border-color: var(--ie-gold) !important;
+  color: var(--ie-black) !important;
+}
+
+.btn-warning:hover,
+.btn-warning:focus {
+  background-color: var(--ie-gold-light) !important;
+  border-color: var(--ie-gold-light) !important;
+  color: var(--ie-black) !important;
+}
+
+.text-warning,
+a {
+  color: var(--ie-gold);
+}
+
+.small-box.bg-warning,
+.card-header.bg-warning {
+  background-color: var(--ie-gold) !important;
+  color: var(--ie-black) !important;
+}
+
+/* Miniatures de photos (sourcing) dans les tableaux d'admin */
+.field-thumbnail img,
+.ie-thumb {
+  border-radius: 6px;
+  border: 1px solid rgba(201, 162, 75, 0.35);
+  object-fit: cover;
+}

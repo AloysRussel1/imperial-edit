@@ -13,6 +13,7 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
+    "jazzmin",  # doit précéder django.contrib.admin
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
     "apps.payments",
     "apps.promotions",
     "apps.sourcing",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -97,6 +99,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -152,6 +155,23 @@ SECONDARY_CURRENCY = env("SECONDARY_CURRENCY", default="EUR")
 EUR_XAF_RATE = env.float("EUR_XAF_RATE", default=655.957)
 WHATSAPP_ADMIN_PHONE_NUMBER = env("WHATSAPP_ADMIN_PHONE_NUMBER", default="")
 
+# ==== Notifications (WhatsApp Cloud API) ====
+# Vide par défaut : les notifications WhatsApp sont alors simplement
+# journalisées (voir apps.notifications) au lieu d'appeler l'API réelle —
+# même logique de repli que les passerelles de paiement.
+WHATSAPP_API_URL = env("WHATSAPP_API_URL", default="https://graph.facebook.com/v19.0")
+WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="")
+WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
+
+# ==== E-mail transactionnel ====
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="The Imperial Edit <no-reply@imperialedit.com>")
+
 # ==== Payment aggregators ====
 CINETPAY_API_KEY = env("CINETPAY_API_KEY", default="")
 CINETPAY_SITE_ID = env("CINETPAY_SITE_ID", default="")
@@ -187,3 +207,95 @@ else:
     # "local": stockage sur le système de fichiers (MEDIA_ROOT/MEDIA_URL ci-dessus),
     # utilisé en développement tant qu'aucun identifiant Cloudinary/S3 n'est fourni.
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
+# ==== Admin Django — thème Jazzmin (Noir & Or, cohérent avec la vitrine) ====
+JAZZMIN_SETTINGS = {
+    "site_title": "The Imperial Edit — Administration",
+    "site_header": "The Imperial Edit",
+    "site_brand": "The Imperial Edit",
+    "site_logo": "admin/img/logo.png",
+    "site_logo_classes": "elevation-0",
+    "site_icon": "admin/img/favicon.png",
+    "login_logo": "admin/img/logo.png",
+    "login_logo_dark": "admin/img/logo.png",
+    "welcome_sign": "Bienvenue dans l'espace d'administration The Imperial Edit",
+    "copyright": "The Imperial Edit",
+    "search_model": ["orders.Order", "sourcing.SourcingRequest", "products.Product", "payments.Transaction"],
+    "user_avatar": None,
+    "topmenu_links": [
+        {"name": "Voir le site", "url": "http://localhost:3000", "new_window": True},
+        {"model": "users.User"},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    # Priorité d'affichage dans le menu latéral : commandes, sourcing et
+    # produits en tête, suivis des transactions et des notifications.
+    "order_with_respect_to": [
+        "orders",
+        "orders.Order",
+        "orders.Cart",
+        "sourcing",
+        "sourcing.SourcingRequest",
+        "products",
+        "products.Product",
+        "products.Category",
+        "payments",
+        "payments.Transaction",
+        "notifications",
+        "promotions",
+        "users",
+        "auth",
+    ],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.Group": "fas fa-users",
+        "users.User": "fas fa-user-tie",
+        "orders.Order": "fas fa-receipt",
+        "orders.Cart": "fas fa-shopping-cart",
+        "orders.CartItem": "fas fa-shopping-basket",
+        "sourcing.SourcingRequest": "fas fa-camera-retro",
+        "products.Product": "fas fa-gem",
+        "products.Category": "fas fa-tags",
+        "payments.Transaction": "fas fa-credit-card",
+        "notifications.NotificationLog": "fas fa-bell",
+        "promotions.Coupon": "fas fa-percent",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "custom_css": "admin/css/imperial-jazzmin.css",
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-warning",
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-warning",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
+    "button_classes": {
+        "primary": "btn-warning",
+        "secondary": "btn-outline-light",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}

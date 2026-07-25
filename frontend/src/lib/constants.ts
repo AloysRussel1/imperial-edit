@@ -9,10 +9,10 @@ export const EUR_XAF_RATE = 655.957;
 export const DEPOSIT_PERCENTAGES = [50, 70] as const;
 
 export const NAV_LINKS = [
-  { label: "Nouveautés", href: "/products?sort=new" },
-  { label: "Catalogue", href: "/products" },
-  { label: "Sourcing Sur Photo", href: "/sourcing" },
-  { label: "À Propos", href: "/about" },
+  { labelKey: "nav.newArrivals", href: "/products?sort=new" },
+  { labelKey: "nav.catalog", href: "/products" },
+  { labelKey: "nav.sourcing", href: "/sourcing" },
+  { labelKey: "nav.about", href: "/about" },
 ] as const;
 
 export const PRICE_BANDS = [

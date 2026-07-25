@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
+import { useTranslation } from "@/hooks/use-translation";
 import { quoteSourcingRequest, rejectSourcingRequest } from "@/lib/api";
-import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import { ADMIN_SOURCING_STATUS_META } from "@/lib/order-status";
 import type { ApiSourcingRequest } from "@/types";
 
@@ -20,6 +20,7 @@ interface SourcingRowProps {
 }
 
 function SourcingRow({ request, onChanged }: SourcingRowProps) {
+  const { t } = useTranslation();
   const [price, setPrice] = useState(request.quoted_price_xaf ? String(Number(request.quoted_price_xaf)) : "");
   const [note, setNote] = useState(request.admin_notes);
   const [busy, setBusy] = useState(false);
@@ -40,7 +41,7 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
   async function handleReject() {
     setBusy(true);
     try {
-      await rejectSourcingRequest(request.id, note || "Article non trouvé chez nos partenaires.");
+      await rejectSourcingRequest(request.id, note || t("admin.sourcing.defaultRejectReason"));
       onChanged();
     } finally {
       setBusy(false);
@@ -48,48 +49,50 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-imperial-black/10 bg-white p-5 sm:flex-row">
+    <div className="flex flex-col gap-4 rounded-xl border border-imperial-black/10 bg-white p-5 transition-shadow hover:shadow-elevated sm:flex-row">
       {request.reference_image ? (
         <Image
           src={request.reference_image}
-          alt={request.product_name || "Article recherché"}
-          width={96}
-          height={96}
-          className="h-24 w-24 shrink-0 rounded-md object-cover"
+          alt={request.product_name || t("admin.sourcing.referenceItem")}
+          width={112}
+          height={112}
+          className="h-28 w-28 shrink-0 rounded-lg object-cover"
         />
       ) : (
-        <PlaceholderImage hue={30} className="h-24 w-24 shrink-0 rounded-md" iconClassName="h-6 w-6" />
+        <PlaceholderImage hue={30} className="h-28 w-28 shrink-0 rounded-lg" iconClassName="h-6 w-6" />
       )}
 
       <div className="flex-1 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="font-medium text-imperial-black">{request.product_name || "Article recherché"}</p>
+            <p className="font-medium text-imperial-black">
+              {request.product_name || t("admin.sourcing.referenceItem")}
+            </p>
             <p className="text-xs text-imperial-black/45">
               {request.customer_name} · {request.customer_whatsapp || request.customer_email} ·{" "}
-              {PRODUCT_TYPE_LABELS[request.category] ?? request.category}
+              {t(`productTypes.${request.category}`)}
               {request.size_or_shoe ? ` · ${request.size_or_shoe}` : ""}
             </p>
           </div>
-          <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+          <Badge variant={statusMeta.variant}>{t(statusMeta.labelKey)}</Badge>
         </div>
 
         <p className="text-sm text-imperial-black/65">{request.description}</p>
 
         {request.budget_max_xaf ? (
-          <p className="text-xs text-imperial-black/45">
-            Budget indiqué : <Price amountXaf={Number(request.budget_max_xaf)} />
+          <p className="text-xs tabular-nums text-imperial-black/45">
+            {t("admin.sourcing.budgetIndicated")} : <Price amountXaf={Number(request.budget_max_xaf)} />
           </p>
         ) : null}
 
         {isResolved ? (
-          <p className="text-sm text-imperial-black/70">
+          <p className="text-sm tabular-nums text-imperial-black/70">
             {request.status === "rejected"
-              ? `Non réalisable — ${request.admin_notes || "raison non précisée"}`
+              ? `${t("admin.sourcing.notFeasible")} — ${request.admin_notes || t("admin.sourcing.unspecifiedReason")}`
               : request.quoted_price_xaf
                 ? (
                   <>
-                    Devis envoyé :{" "}
+                    {t("admin.sourcing.quoteSent")} :{" "}
                     <Price amountXaf={Number(request.quoted_price_xaf)} className="font-semibold text-imperial-gold" />
                     {request.admin_notes ? <span className="text-imperial-black/50"> — {request.admin_notes}</span> : null}
                   </>
@@ -102,7 +105,7 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
               <Input
                 type="number"
                 min={0}
-                placeholder="Prix (XAF)"
+                placeholder={t("admin.sourcing.pricePlaceholder")}
                 value={price}
                 disabled={busy}
                 onChange={(e) => setPrice(e.target.value)}
@@ -110,7 +113,7 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
             </div>
             <div className="min-w-[160px] flex-1">
               <Input
-                placeholder="Note (délai, disponibilité…)"
+                placeholder={t("admin.sourcing.notePlaceholder")}
                 value={note}
                 disabled={busy}
                 onChange={(e) => setNote(e.target.value)}
@@ -118,10 +121,10 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
             </div>
             <Button size="sm" variant="gold" disabled={!price || busy} onClick={handleQuote}>
               {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-              Envoyer le devis
+              {t("admin.sourcing.sendQuote")}
             </Button>
             <Button size="sm" variant="outline" disabled={busy} onClick={handleReject}>
-              Décliner
+              {t("admin.sourcing.decline")}
             </Button>
           </div>
         )}
@@ -136,12 +139,18 @@ interface AdminSourcingPanelProps {
 }
 
 export function AdminSourcingPanel({ requests, onChanged }: AdminSourcingPanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
-      <h2 className="font-display text-2xl text-imperial-black">Demandes de sourcing</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="font-display text-2xl text-imperial-black">{t("admin.sourcing.title")}</h2>
+        <span className="rounded-full bg-imperial-ivory px-2 py-0.5 text-xs font-medium tabular-nums text-imperial-black/50">
+          {requests.length}
+        </span>
+      </div>
       {requests.length === 0 ? (
-        <p className="rounded-lg border border-imperial-black/10 bg-white p-8 text-center text-imperial-black/50">
-          Aucune demande de sourcing pour le moment.
+        <p className="rounded-xl border border-imperial-black/10 bg-white p-8 text-center text-imperial-black/50">
+          {t("admin.sourcing.empty")}
         </p>
       ) : (
         <div className="space-y-4">

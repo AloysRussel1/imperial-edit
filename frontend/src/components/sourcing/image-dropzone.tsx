@@ -4,6 +4,7 @@ import { type DragEvent, useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, X } from "lucide-react";
 
+import { useTranslation } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
 
 interface ImageDropzoneProps {
@@ -12,6 +13,7 @@ interface ImageDropzoneProps {
 }
 
 export function ImageDropzone({ previewUrl, onChange }: ImageDropzoneProps) {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,11 +35,11 @@ export function ImageDropzone({ previewUrl, onChange }: ImageDropzoneProps) {
   if (previewUrl) {
     return (
       <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-imperial-black/10">
-        <Image src={previewUrl} alt="Aperçu de l'article recherché" fill className="object-cover" unoptimized />
+        <Image src={previewUrl} alt={t("sourcing.dropzoneAlt")} fill className="object-cover" unoptimized />
         <button
           type="button"
           onClick={() => onChange(null, null)}
-          aria-label="Retirer la photo"
+          aria-label={t("sourcing.removePhoto")}
           className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-imperial-black/70 text-imperial-ivory hover:bg-imperial-black"
         >
           <X className="h-4 w-4" />
@@ -67,9 +69,9 @@ export function ImageDropzone({ previewUrl, onChange }: ImageDropzoneProps) {
     >
       <ImagePlus className="h-8 w-8 text-imperial-black/40" strokeWidth={1.5} />
       <p className="text-sm text-imperial-black/60">
-        Glissez-déposez une photo ici, ou <span className="text-imperial-gold underline">parcourir</span>
+        {t("sourcing.dropzoneHint")} <span className="text-imperial-gold underline">{t("sourcing.dropzoneBrowse")}</span>
       </p>
-      <p className="text-xs text-imperial-black/40">JPG, PNG — 10 Mo max</p>
+      <p className="text-xs text-imperial-black/40">{t("sourcing.dropzoneFileHint")}</p>
       <input
         ref={inputRef}
         type="file"

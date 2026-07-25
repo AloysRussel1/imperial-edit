@@ -3,6 +3,7 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from apps.notifications.tasks import send_sourcing_quote_notification
 from apps.orders.models import Order, OrderStatus
 
 from .models import SourcingRequest, SourcingStatus
@@ -38,6 +39,7 @@ def quote_sourcing_request(request_obj: SourcingRequest, *, quoted_price_xaf, ad
     request_obj.admin_notes = admin_notes
     request_obj.status = SourcingStatus.QUOTED
     request_obj.save(update_fields=["quoted_price_xaf", "admin_notes", "status", "updated_at"])
+    send_sourcing_quote_notification.delay(str(request_obj.id))
     return request_obj
 
 

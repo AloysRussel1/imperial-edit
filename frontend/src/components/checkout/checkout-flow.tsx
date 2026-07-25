@@ -13,15 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Price } from "@/components/common/price";
 import { Stepper } from "@/components/checkout/stepper";
+import { useTranslation } from "@/hooks/use-translation";
 import { checkoutOrder, fetchOrder, initiatePayment, simulateSandboxPaymentOutcome } from "@/lib/api";
-import { DELIVERY_LOCATIONS, PAYMENT_METHOD_LABELS } from "@/lib/constants";
+import { DELIVERY_LOCATIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { cartTotalXaf, useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useOrdersStore } from "@/store/orders-store";
 import type { ApiOrder, ApiTransaction, DepositPercentage, PaymentMethod } from "@/types";
-
-const STEP_LABELS = ["Livraison", "Acompte", "Paiement", "Confirmation"];
 
 type PaymentPlan = "deposit50" | "deposit70" | "full";
 
@@ -37,6 +36,12 @@ function wait(ms: number) {
 
 export function CheckoutFlow() {
   const router = useRouter();
+  const { t, tList } = useTranslation();
+  const paymentMethodLabels: Record<PaymentMethod, string> = {
+    mtn_momo: t("checkout.paymentMethods.mtn_momo"),
+    orange_money: t("checkout.paymentMethods.orange_money"),
+    card: t("checkout.paymentMethods.card"),
+  };
   const user = useAuthStore((state) => state.user);
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clear);
@@ -68,16 +73,13 @@ export function CheckoutFlow() {
   if (!user) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-imperial-black/10 bg-white p-10 text-center">
-        <p className="text-imperial-black/70">
-          Connectez-vous pour finaliser votre commande — elle est associée à votre compte pour le suivi et le
-          paiement du solde.
-        </p>
+        <p className="text-imperial-black/70">{t("checkout.guestPrompt")}</p>
         <div className="flex justify-center gap-3">
           <Button asChild variant="gold">
-            <Link href="/login?next=/checkout">Se connecter</Link>
+            <Link href="/login?next=/checkout">{t("checkout.login")}</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/register">Créer un compte</Link>
+            <Link href="/register">{t("checkout.createAccount")}</Link>
           </Button>
         </div>
       </div>
@@ -87,9 +89,9 @@ export function CheckoutFlow() {
   if (items.length === 0 && !order) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-imperial-black/10 bg-white p-10 text-center">
-        <p className="text-imperial-black/60">Votre panier est vide, rien à commander pour l&apos;instant.</p>
+        <p className="text-imperial-black/60">{t("checkout.emptyCart")}</p>
         <Button asChild variant="gold">
-          <Link href="/products">Découvrir le catalogue</Link>
+          <Link href="/products">{t("checkout.discoverCatalog")}</Link>
         </Button>
       </div>
     );
@@ -133,7 +135,7 @@ export function CheckoutFlow() {
       if (err instanceof AxiosError && err.response?.data?.detail) {
         setError(String(err.response.data.detail));
       } else {
-        setError("Impossible de finaliser la commande pour le moment. Réessayez dans un instant.");
+        setError(t("checkout.genericError"));
       }
     } finally {
       setSubmitting(false);
@@ -158,11 +160,7 @@ export function CheckoutFlow() {
       setOrder(latestOrder);
 
       if (latestOrder.status === "pending_deposit") {
-        setError(
-          outcome === "failed"
-            ? "Paiement refusé (simulation). Vous pouvez réessayer."
-            : "La confirmation prend plus de temps que prévu — vérifiez votre commande dans quelques instants."
-        );
+        setError(outcome === "failed" ? t("checkout.paymentRefused") : t("checkout.confirmationDelay"));
         return;
       }
 
@@ -194,7 +192,7 @@ export function CheckoutFlow() {
       clearCart();
       router.push(`/checkout/success?id=${latestOrder.id}&number=${latestOrder.order_number}`);
     } catch {
-      setError("Impossible de vérifier le paiement pour le moment.");
+      setError(t("checkout.verifyError"));
     } finally {
       setConfirming(false);
     }
@@ -207,26 +205,26 @@ export function CheckoutFlow() {
           <Smartphone className="h-7 w-7 text-imperial-gold" />
         </div>
         <div>
-          <h2 className="font-display text-2xl text-imperial-black">Validez le paiement sur votre téléphone</h2>
+          <h2 className="font-display text-2xl text-imperial-black">{t("checkout.step4Title")}</h2>
           <p className="mt-1 text-sm text-imperial-black/60">
             {paymentMethod === "card"
-              ? "Une demande de paiement par carte a été initiée."
-              : `Une demande de paiement ${PAYMENT_METHOD_LABELS[paymentMethod]} a été envoyée au ${payerPhone}.`}{" "}
-            Composez votre code pour confirmer.
+              ? t("checkout.step4DescCard")
+              : t("checkout.step4DescMobile", { method: paymentMethodLabels[paymentMethod], phone: payerPhone })}{" "}
+            {t("checkout.step4DescSuffix")}
           </p>
         </div>
 
         <div className="rounded-lg border border-imperial-black/10 bg-white p-5 text-left text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-imperial-black/50">Commande</span>
+            <span className="text-imperial-black/50">{t("checkout.orderLabel")}</span>
             <span className="font-semibold text-imperial-black">{order.order_number}</span>
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-imperial-black/50">Référence transaction</span>
+            <span className="text-imperial-black/50">{t("checkout.transactionRefLabel")}</span>
             <span className="text-imperial-black">{transaction.provider_reference}</span>
           </div>
           <div className="mt-2 flex items-center justify-between border-t border-imperial-black/10 pt-2">
-            <span className="text-imperial-black/50">Montant à valider</span>
+            <span className="text-imperial-black/50">{t("checkout.amountToConfirmLabel")}</span>
             <Price amountXaf={Number(transaction.amount_xaf)} className="font-semibold text-imperial-gold" />
           </div>
         </div>
@@ -236,45 +234,54 @@ export function CheckoutFlow() {
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
           <Button variant="gold" disabled={confirming} onClick={() => handleSimulateOutcome("success")}>
             {confirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            J&apos;ai validé sur mon téléphone
+            {t("checkout.confirmedOnPhone")}
           </Button>
           <Button variant="outline" disabled={confirming} onClick={() => handleSimulateOutcome("failed")}>
-            Simuler un refus
+            {t("checkout.simulateRefusal")}
           </Button>
         </div>
-        <p className="text-xs text-imperial-black/40">
-          Environnement de démonstration : ces boutons simulent la notification que l&apos;agrégateur de
-          paiement (CinetPay / Orange / MTN) enverrait normalement à notre serveur.
-        </p>
+        <p className="text-xs text-imperial-black/40">{t("checkout.sandboxNotice")}</p>
       </div>
     );
   }
 
+  const planOptions = [
+    { id: "deposit50" as const, label: t("checkout.planDeposit50Label"), description: t("checkout.planDepositDesc") },
+    { id: "deposit70" as const, label: t("checkout.planDeposit70Label"), description: t("checkout.planDepositDesc") },
+    { id: "full" as const, label: t("checkout.planFullLabel"), description: t("checkout.planFullDesc") },
+  ];
+
+  const paymentMethodOptions = [
+    { id: "mtn_momo" as const, icon: Smartphone, label: paymentMethodLabels.mtn_momo },
+    { id: "orange_money" as const, icon: Smartphone, label: paymentMethodLabels.orange_money },
+    { id: "card" as const, icon: CreditCard, label: paymentMethodLabels.card },
+  ];
+
   return (
     <div className="mx-auto max-w-2xl space-y-10">
-      <Stepper steps={STEP_LABELS} currentStep={step} />
+      <Stepper steps={tList("checkout.steps")} currentStep={step} />
 
       {step === 1 ? (
         <div className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">Coordonnées &amp; livraison</h2>
+          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step1Title")}</h2>
           <div className="space-y-1.5">
-            <Label htmlFor="checkout-address">Adresse de livraison</Label>
+            <Label htmlFor="checkout-address">{t("checkout.addressLabel")}</Label>
             <Input
               id="checkout-address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder="Quartier, rue, point de repère"
+              placeholder={t("checkout.addressPlaceholder")}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="checkout-city">Ville de livraison</Label>
+            <Label htmlFor="checkout-city">{t("checkout.cityLabel")}</Label>
             <select
               id="checkout-city"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               className="flex h-10 w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-sm text-imperial-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold"
             >
-              <option value="">Sélectionner une ville</option>
+              <option value="">{t("checkout.citySelectPlaceholder")}</option>
               {DELIVERY_LOCATIONS.map((group) => (
                 <optgroup key={group.group} label={group.group}>
                   {group.cities.map((c) => (
@@ -288,7 +295,7 @@ export function CheckoutFlow() {
           </div>
           <div className="flex justify-end">
             <Button variant="gold" disabled={!step1Valid} onClick={() => setStep(2)}>
-              Continuer
+              {t("checkout.continue")}
             </Button>
           </div>
         </div>
@@ -296,15 +303,9 @@ export function CheckoutFlow() {
 
       {step === 2 ? (
         <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">Option de paiement</h2>
+          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step2Title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {(
-              [
-                { id: "deposit50", label: "Acompte 50%", description: "Solde à la livraison" },
-                { id: "deposit70", label: "Acompte 70%", description: "Solde à la livraison" },
-                { id: "full", label: "Paiement Total", description: "100% aujourd'hui" },
-              ] as const
-            ).map((option) => (
+            {planOptions.map((option) => (
               <button
                 key={option.id}
                 type="button"
@@ -324,19 +325,19 @@ export function CheckoutFlow() {
 
           <dl className="space-y-2 rounded-lg bg-imperial-ivory p-4 text-sm">
             <div className="flex items-center justify-between">
-              <dt className="text-imperial-black/60">Total de la commande</dt>
+              <dt className="text-imperial-black/60">{t("checkout.orderTotalLabel")}</dt>
               <dd className="font-medium text-imperial-black">
                 <Price amountXaf={total} />
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-imperial-black/60">À régler aujourd&apos;hui</dt>
+              <dt className="text-imperial-black/60">{t("checkout.dueTodayLabel")}</dt>
               <dd className="font-semibold text-imperial-gold">
                 <Price amountXaf={depositAmount} />
               </dd>
             </div>
             <div className="flex items-center justify-between border-t border-imperial-black/10 pt-2">
-              <dt className="text-imperial-black/60">Solde dû à la livraison</dt>
+              <dt className="text-imperial-black/60">{t("checkout.balanceDueLabel")}</dt>
               <dd className="text-imperial-black">
                 <Price amountXaf={remainingAmount} />
               </dd>
@@ -345,10 +346,10 @@ export function CheckoutFlow() {
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(1)}>
-              Retour
+              {t("checkout.back")}
             </Button>
             <Button variant="gold" onClick={() => setStep(3)}>
-              Continuer
+              {t("checkout.continue")}
             </Button>
           </div>
         </div>
@@ -356,15 +357,9 @@ export function CheckoutFlow() {
 
       {step === 3 ? (
         <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">Mode de paiement</h2>
+          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step3Title")}</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {(
-              [
-                { id: "mtn_momo" as const, icon: Smartphone, label: PAYMENT_METHOD_LABELS.mtn_momo },
-                { id: "orange_money" as const, icon: Smartphone, label: PAYMENT_METHOD_LABELS.orange_money },
-                { id: "card" as const, icon: CreditCard, label: PAYMENT_METHOD_LABELS.card },
-              ]
-            ).map((option) => (
+            {paymentMethodOptions.map((option) => (
               <button
                 key={option.id}
                 type="button"
@@ -383,14 +378,11 @@ export function CheckoutFlow() {
           </div>
 
           {paymentMethod === "card" ? (
-            <p className="rounded-md bg-imperial-ivory p-4 text-sm text-imperial-black/60">
-              Vous serez redirigé vers une page de paiement sécurisée (CinetPay) pour finaliser le règlement
-              par carte bancaire.
-            </p>
+            <p className="rounded-md bg-imperial-ivory p-4 text-sm text-imperial-black/60">{t("checkout.cardNotice")}</p>
           ) : (
             <div className="space-y-1.5">
               <Label htmlFor="checkout-payer-phone">
-                Numéro {PAYMENT_METHOD_LABELS[paymentMethod]} du payeur
+                {t("checkout.payerPhoneLabel", { method: paymentMethodLabels[paymentMethod] })}
               </Label>
               <Input
                 id="checkout-payer-phone"
@@ -405,11 +397,11 @@ export function CheckoutFlow() {
 
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => setStep(2)} disabled={submitting}>
-              Retour
+              {t("checkout.back")}
             </Button>
             <Button variant="gold" disabled={!step3Valid || submitting} onClick={handleConfirmAndPay}>
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Confirmer et payer <Price amountXaf={depositAmount} className="ml-1" />
+              {t("checkout.confirmAndPay")} <Price amountXaf={depositAmount} className="ml-1" />
             </Button>
           </div>
         </div>
@@ -418,7 +410,7 @@ export function CheckoutFlow() {
       {step !== 4 ? (
         <div className="space-y-3 rounded-lg border border-imperial-black/10 bg-white p-6">
           <h3 className="text-xs uppercase tracking-widest2 text-imperial-black/50">
-            Récapitulatif ({items.length} article{items.length > 1 ? "s" : ""})
+            {t("checkout.summaryTitle")} ({items.length} {items.length > 1 ? t("checkout.articles") : t("checkout.article")})
           </h3>
           <ul className="space-y-3">
             {items.map((item) => (
@@ -442,7 +434,7 @@ export function CheckoutFlow() {
       ) : null}
 
       <Badge variant="outline" className="mx-auto block w-fit text-center">
-        Paiement sécurisé via CinetPay — Mobile Money &amp; carte bancaire
+        {t("checkout.secureBadge")}
       </Badge>
     </div>
   );

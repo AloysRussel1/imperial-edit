@@ -1,14 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import { Gem } from "lucide-react";
 
 import { AccountMenu } from "@/components/layout/account-menu";
 import { CartSheet } from "@/components/layout/cart-sheet";
 import { CurrencySwitcher } from "@/components/layout/currency-switcher";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SearchDialog } from "@/components/layout/search-dialog";
+import { useTranslation } from "@/hooks/use-translation";
 import { NAV_LINKS } from "@/lib/constants";
 
 export function Header() {
+  const { t } = useTranslation();
+
   return (
     <header className="sticky top-0 z-30 border-b border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-4">
@@ -28,13 +34,14 @@ export function Header() {
               href={link.href}
               className="text-sm uppercase tracking-wide text-imperial-black/80 transition-colors hover:text-imperial-gold"
             >
-              {link.label}
+              {t(link.labelKey)}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-1">
           <SearchDialog />
+          <LanguageSwitcher />
           <CurrencySwitcher />
           <CartSheet />
           <AccountMenu />

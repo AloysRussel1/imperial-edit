@@ -27,3 +27,8 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Gunicorn (utilisé même en dev par ce projet) ne sert pas les fichiers
+    # statiques comme le fait `runserver` : on les expose donc explicitement,
+    # comme pour les médias ci-dessus (STATIC_ROOT est déjà peuplé par
+    # `collectstatic`, lancé au démarrage du conteneur web).
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

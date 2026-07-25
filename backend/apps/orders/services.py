@@ -10,6 +10,8 @@ from django.utils import timezone
 from apps.products.models import ProductVariant
 from apps.products.services import release_stock, reserve_stock
 
+from apps.notifications.tasks import send_order_deposit_notification
+
 from .models import Order, OrderItem, OrderStatus
 from .tasks import notify_deposit_paid
 
@@ -128,7 +130,8 @@ def register_payment(order: Order, amount_xaf: Decimal) -> Order:
         order.status = OrderStatus.COMPLETED
     order.save(update_fields=["amount_paid_xaf", "status", "updated_at"])
     if was_pending and order.status in (OrderStatus.DEPOSIT_PAID, OrderStatus.COMPLETED):
-        notify_deposit_paid.delay(str(order.id))
+        notify_deposit_paid.delay(str(order.id))  # notification interne (mail_admins)
+        send_order_deposit_notification.delay(str(order.id))  # confirmation client (WhatsApp + e-mail)
     return order
 
 
