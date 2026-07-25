@@ -8,6 +8,7 @@ import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuthStore } from "@/store/auth-store";
 
 export function LoginForm() {
@@ -50,10 +51,14 @@ export function LoginForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="login-password">Mot de passe</Label>
-        <Input
+        <div className="flex items-center justify-between">
+          <Label htmlFor="login-password">Mot de passe</Label>
+          <Link href="/forgot-password" className="text-xs text-imperial-gold underline underline-offset-4">
+            Mot de passe oublié ?
+          </Link>
+        </div>
+        <PasswordInput
           id="login-password"
-          type="password"
           required
           autoComplete="current-password"
           value={password}

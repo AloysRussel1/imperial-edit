@@ -66,56 +66,7 @@ export type OrderStatus =
   | "completed"
   | "cancelled";
 
-export interface Order {
-  id: string;
-  order_number: string;
-  status: OrderStatus;
-  currency: string;
-  total_xaf: number;
-  amount_paid_xaf: number;
-  amount_remaining_xaf: number;
-  deposit_percentage: 50 | 70 | 100;
-}
-
 export type PaymentMethod = "mtn_momo" | "orange_money" | "card";
-
-export interface OrderItemRecord {
-  productSlug: string;
-  name: string;
-  brand: string;
-  size: string;
-  color: string;
-  imageUrl: string;
-  unitPriceXaf: number;
-  quantity: number;
-}
-
-export interface OrderRecord extends Order {
-  created_at: string;
-  customer_name: string;
-  whatsapp_number: string;
-  delivery_city: string;
-  payment_method: PaymentMethod;
-  items: OrderItemRecord[];
-}
-
-export type SourcingStatus = "pending" | "quoted" | "declined" | "accepted";
-
-export interface SourcingRequestRecord {
-  id: string;
-  created_at: string;
-  customer_name: string;
-  contact: string;
-  product_name: string;
-  category: ProductType | "other";
-  size_or_shoe: string;
-  budget_max_xaf: number | null;
-  description: string;
-  image_data_url: string | null;
-  status: SourcingStatus;
-  quoted_price_xaf: number | null;
-  admin_note: string;
-}
 
 // ---- Formes brutes renvoyées par l'API Django (avant adaptation côté frontend) ----
 

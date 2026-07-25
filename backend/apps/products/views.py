@@ -21,8 +21,16 @@ class ProductViewSet(viewsets.ModelViewSet):
     évite au frontend de devoir composer deux formes de données différentes.
     """
 
-    queryset = Product.objects.select_related("category").prefetch_related("images", "variants")
     serializer_class = ProductDetailSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, ReadOnlyOrAdmin)
     lookup_field = "slug"
     filterset_fields = ("product_type", "category__slug", "is_featured")
+
+    def get_queryset(self):
+        base = Product.objects.select_related("category").prefetch_related("images", "variants")
+        user = self.request.user
+        if user.is_authenticated and getattr(user, "role", None) == "admin":
+            return base
+        # Vitrine publique : les fiches inactives (ex. import brut en attente de complétion
+        # par l'équipe) restent invisibles tant qu'un admin ne les active pas explicitement.
+        return base.filter(is_active=True)

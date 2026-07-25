@@ -156,6 +156,28 @@ export async function loginAccount(payload: LoginPayload): Promise<{ tokens: Aut
   return { tokens, user };
 }
 
+/**
+ * Réponse volontairement générique côté backend (que l'e-mail corresponde à un
+ * compte ou non) — évite de révéler l'existence d'un compte à un tiers.
+ */
+export async function requestPasswordReset(email: string): Promise<{ detail: string }> {
+  const { data } = await apiClient.post<{ detail: string }>("/auth/password-reset/", { email });
+  return data;
+}
+
+export async function confirmPasswordReset(
+  uid: string,
+  token: string,
+  newPassword: string
+): Promise<{ detail: string }> {
+  const { data } = await apiClient.post<{ detail: string }>("/auth/password-reset/confirm/", {
+    uid,
+    token,
+    new_password: newPassword,
+  });
+  return data;
+}
+
 export async function fetchCurrentUser(): Promise<ApiUser> {
   const { data } = await apiClient.get<ApiUser>("/auth/me/");
   return data;

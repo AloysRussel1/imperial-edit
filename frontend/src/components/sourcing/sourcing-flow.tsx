@@ -15,9 +15,8 @@ import { Price } from "@/components/common/price";
 import { ImageDropzone } from "@/components/sourcing/image-dropzone";
 import { useTranslation } from "@/hooks/use-translation";
 import { submitSourcingRequest } from "@/lib/api";
-import { SOURCING_STATUS_META } from "@/lib/order-status";
+import { ADMIN_SOURCING_STATUS_META } from "@/lib/order-status";
 import { useAuthStore } from "@/store/auth-store";
-import { useSourcingStore } from "@/store/sourcing-store";
 import type { ApiSourcingRequest, ProductType } from "@/types";
 
 const CATEGORY_OPTIONS: (ProductType | "other")[] = ["bags", "shoes", "clothing", "perfumes", "watches", "other"];
@@ -25,7 +24,6 @@ const CATEGORY_OPTIONS: (ProductType | "other")[] = ["bags", "shoes", "clothing"
 export function SourcingFlow() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
-  const addRequest = useSourcingStore((state) => state.addRequest);
 
   const [submitted, setSubmitted] = useState<ApiSourcingRequest | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -63,24 +61,6 @@ export function SourcingFlow() {
         image: imageFile,
       });
 
-      // Miroir local pour l'espace client (Étape précédente), le temps que le
-      // tableau de bord lise directement l'API de sourcing.
-      addRequest({
-        id: result.id,
-        created_at: result.created_at,
-        customer_name: user ? `${user.first_name} ${user.last_name}`.trim() : "",
-        contact: user?.whatsapp_number || user?.email || "",
-        product_name: result.product_name,
-        category: result.category,
-        size_or_shoe: result.size_or_shoe,
-        budget_max_xaf: result.budget_max_xaf ? Number(result.budget_max_xaf) : null,
-        description: result.description,
-        image_data_url: result.reference_image,
-        status: "pending",
-        quoted_price_xaf: null,
-        admin_note: "",
-      });
-
       setSubmitted(result);
       resetForm();
     } catch (err) {
@@ -112,7 +92,7 @@ export function SourcingFlow() {
   }
 
   if (submitted) {
-    const statusMeta = SOURCING_STATUS_META.pending;
+    const statusMeta = ADMIN_SOURCING_STATUS_META[submitted.status];
     return (
       <div className="space-y-6 rounded-lg border border-imperial-gold/30 bg-imperial-gold/5 p-6 text-center">
         <CheckCircle2 className="mx-auto h-10 w-10 text-imperial-gold" strokeWidth={1.5} />

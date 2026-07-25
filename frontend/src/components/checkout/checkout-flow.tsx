@@ -19,7 +19,6 @@ import { DELIVERY_LOCATIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { cartTotalXaf, useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
-import { useOrdersStore } from "@/store/orders-store";
 import type { ApiOrder, ApiTransaction, DepositPercentage, PaymentMethod } from "@/types";
 
 type PaymentPlan = "deposit50" | "deposit70" | "full";
@@ -45,7 +44,6 @@ export function CheckoutFlow() {
   const user = useAuthStore((state) => state.user);
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clear);
-  const addOrder = useOrdersStore((state) => state.addOrder);
 
   const [step, setStep] = useState(1);
   const [shippingAddress, setShippingAddress] = useState("");
@@ -164,31 +162,6 @@ export function CheckoutFlow() {
         return;
       }
 
-      addOrder({
-        id: latestOrder.id,
-        order_number: latestOrder.order_number,
-        status: latestOrder.status,
-        currency: latestOrder.currency,
-        total_xaf: Number(latestOrder.total_xaf),
-        amount_paid_xaf: Number(latestOrder.amount_paid_xaf),
-        amount_remaining_xaf: Number(latestOrder.amount_remaining_xaf),
-        deposit_percentage: latestOrder.deposit_percentage,
-        payment_method: paymentMethod,
-        created_at: latestOrder.created_at,
-        customer_name: `${user.first_name} ${user.last_name}`.trim(),
-        whatsapp_number: user.whatsapp_number,
-        delivery_city: latestOrder.delivery_city,
-        items: items.map((item) => ({
-          productSlug: item.productSlug,
-          name: item.name,
-          brand: item.brand,
-          size: item.size,
-          color: item.color,
-          imageUrl: item.imageUrl,
-          unitPriceXaf: item.unitPriceXaf,
-          quantity: item.quantity,
-        })),
-      });
       clearCart();
       router.push(`/checkout/success?id=${latestOrder.id}&number=${latestOrder.order_number}`);
     } catch {

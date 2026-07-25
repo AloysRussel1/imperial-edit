@@ -172,6 +172,12 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="The Imperial Edit <no-reply@imperialedit.com>")
 
+# ==== Frontend (liens embarqués dans les e-mails transactionnels) ====
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+
+# Durée de validité d'un lien de réinitialisation de mot de passe (en secondes).
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # 24h
+
 # ==== Payment aggregators ====
 CINETPAY_API_KEY = env("CINETPAY_API_KEY", default="")
 CINETPAY_SITE_ID = env("CINETPAY_SITE_ID", default="")

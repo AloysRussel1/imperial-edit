@@ -45,12 +45,6 @@ const fr = {
     completed: "Livrée",
     cancelled: "Annulée",
   },
-  sourcingStatus: {
-    pending: "En cours d'analyse par l'équipe",
-    quoted: "Devis reçu",
-    accepted: "Devis accepté",
-    declined: "Non réalisable",
-  },
   adminSourcingStatus: {
     new: "Nouvelle demande",
     under_review: "En cours d'étude",
@@ -256,12 +250,6 @@ const en: typeof fr = {
     ready_for_delivery: "Ready for delivery",
     completed: "Delivered",
     cancelled: "Cancelled",
-  },
-  sourcingStatus: {
-    pending: "Under review by our team",
-    quoted: "Quote received",
-    accepted: "Quote accepted",
-    declined: "Not feasible",
   },
   adminSourcingStatus: {
     new: "New request",

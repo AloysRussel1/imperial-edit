@@ -1,5 +1,5 @@
 import type { BadgeProps } from "@/components/ui/badge";
-import type { ApiSourcingStatus, OrderStatus, SourcingStatus } from "@/types";
+import type { ApiSourcingStatus, OrderStatus } from "@/types";
 
 /**
  * `label` reste le libellé français par défaut (consommé tel quel par les écrans non
@@ -23,13 +23,6 @@ export const ORDER_STATUS_OPTIONS: OrderStatus[] = [
   "completed",
   "cancelled",
 ];
-
-export const SOURCING_STATUS_META: Record<SourcingStatus, { label: string; labelKey: string; variant: BadgeProps["variant"] }> = {
-  pending: { label: "En cours d'analyse par l'équipe", labelKey: "sourcingStatus.pending", variant: "warning" },
-  quoted: { label: "Devis reçu", labelKey: "sourcingStatus.quoted", variant: "info" },
-  accepted: { label: "Devis accepté", labelKey: "sourcingStatus.accepted", variant: "success" },
-  declined: { label: "Non réalisable", labelKey: "sourcingStatus.declined", variant: "outline" },
-};
 
 export const ADMIN_SOURCING_STATUS_META: Record<ApiSourcingStatus, { label: string; labelKey: string; variant: BadgeProps["variant"] }> = {
   new: { label: "Nouvelle demande", labelKey: "adminSourcingStatus.new", variant: "warning" },

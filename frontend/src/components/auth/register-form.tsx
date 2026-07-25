@@ -9,6 +9,8 @@ import { AxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { useAuthStore } from "@/store/auth-store";
 
 export function RegisterForm() {
@@ -21,12 +23,21 @@ export function RegisterForm() {
   const [whatsapp, setWhatsapp] = useState("");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    if (mismatch) {
+      setError("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
+
     setLoading(true);
     try {
       await register({
@@ -90,18 +101,29 @@ export function RegisterForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="register-password">Mot de passe</Label>
-        <Input
+        <PasswordInput
           id="register-password"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <PasswordStrengthMeter password={password} />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="register-password-confirm">Confirmer le mot de passe</Label>
+        <PasswordInput
+          id="register-password-confirm"
+          required
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+        {mismatch ? <p className="text-xs text-red-700">Les mots de passe ne correspondent pas.</p> : null}
       </div>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading}>
+      <Button type="submit" variant="gold" size="lg" className="w-full" disabled={loading || mismatch}>
         <UserPlus className="mr-2 h-4 w-4" />
         {loading ? "Création du compte…" : "Créer mon compte"}
       </Button>
