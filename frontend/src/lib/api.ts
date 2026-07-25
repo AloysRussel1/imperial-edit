@@ -1,0 +1,274 @@
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+
+import { EUR_XAF_RATE } from "@/lib/constants";
+import { useAuthStore } from "@/store/auth-store";
+import type {
+  AdminDashboardSummary,
+  ApiOrder,
+  ApiOrderStatus,
+  ApiProduct,
+  ApiSourcingRequest,
+  ApiTransaction,
+  ApiUser,
+  AuthTokens,
+  CheckoutPayload,
+  InitiatePaymentPayload,
+  LoginPayload,
+  ProductAvailability,
+  ProductDetail,
+  RegisterPayload,
+} from "@/types";
+
+// Le navigateur (hors conteneur) doit passer par le port publié sur l'hôte ;
+// le rendu serveur Next.js (à l'intérieur du réseau Docker) doit joindre le
+// service "web" par son nom, "localhost" n'y désignant pas le backend.
+const PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
+const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL ?? PUBLIC_API_BASE_URL;
+
+export const apiClient = axios.create({
+  baseURL: typeof window === "undefined" ? INTERNAL_API_BASE_URL : PUBLIC_API_BASE_URL,
+});
+// Pas de Content-Type par défaut : axios détecte automatiquement JSON (objet)
+// vs multipart/form-data (FormData, pour l'upload de photo) requête par requête.
+
+apiClient.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  }
+  return config;
+});
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = useAuthStore.getState().refreshToken;
+  if (!refreshToken) return null;
+  try {
+    const { data } = await axios.post<{ access: string }>(`${apiClient.defaults.baseURL}/auth/refresh/`, {
+      refresh: refreshToken,
+    });
+    useAuthStore.getState().setAccessToken(data.access);
+    return data.access;
+  } catch {
+    useAuthStore.getState().logout();
+    return null;
+  }
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
+    if (error.response?.status === 401 && original && !original._retried && useAuthStore.getState().refreshToken) {
+      original._retried = true;
+      refreshPromise ??= refreshAccessToken();
+      const newToken = await refreshPromise;
+      refreshPromise = null;
+      if (newToken) {
+        original.headers.set("Authorization", `Bearer ${newToken}`);
+        return apiClient(original);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+function deriveAvailability(product: ApiProduct): ProductAvailability {
+  const hasStock = product.variants.some((v) => v.is_in_stock);
+  return {
+    status: hasStock ? "in_stock" : "made_to_order",
+    location: "Paris",
+    delivery_estimate: hasStock ? "7 à 10 jours vers le Cameroun" : "15 à 21 jours vers le Cameroun",
+  };
+}
+
+function mapApiProduct(product: ApiProduct): ProductDetail {
+  const base_price_xaf = Number(product.base_price_xaf);
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    product_type: product.product_type,
+    brand: product.brand,
+    price_eur: Math.round(base_price_xaf / EUR_XAF_RATE),
+    base_price_xaf,
+    compare_at_price_xaf: product.compare_at_price_xaf ? Number(product.compare_at_price_xaf) : null,
+    is_on_sale: product.is_on_sale,
+    is_featured: product.is_featured,
+    description: product.description,
+    category: product.category,
+    default_deposit_percentage: product.default_deposit_percentage,
+    availability: deriveAvailability(product),
+    images: product.images.map((image) => ({
+      id: image.id,
+      url: image.image,
+      alt: `${product.name} — photo ${image.position + 1}`,
+    })),
+    variants: product.variants.map((variant) => ({
+      id: variant.id,
+      sku: variant.sku,
+      size: variant.size,
+      color: variant.color,
+      price_override_xaf: variant.price_override_xaf ? Number(variant.price_override_xaf) : null,
+      price_xaf: Number(variant.price_xaf),
+      stock_quantity: variant.stock_quantity,
+      available_quantity: variant.available_quantity,
+      is_in_stock: variant.is_in_stock,
+    })),
+  };
+}
+
+export async function fetchProducts(): Promise<ProductDetail[]> {
+  const { data } = await apiClient.get<{ results: ApiProduct[] }>("/products/");
+  return data.results.map(mapApiProduct);
+}
+
+export async function fetchProductBySlug(slug: string): Promise<ProductDetail | null> {
+  try {
+    const { data } = await apiClient.get<ApiProduct>(`/products/${slug}/`);
+    return mapApiProduct(data);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+// ---- Authentification ----
+
+export async function registerAccount(payload: RegisterPayload): Promise<{ tokens: AuthTokens; user: ApiUser }> {
+  await apiClient.post("/auth/register/", payload);
+  // L'inscription ne renvoie pas de session : on enchaîne avec une connexion
+  // immédiate pour offrir une expérience "inscription = déjà connecté".
+  return loginAccount({ email: payload.email, password: payload.password });
+}
+
+export async function loginAccount(payload: LoginPayload): Promise<{ tokens: AuthTokens; user: ApiUser }> {
+  const { data: tokens } = await apiClient.post<AuthTokens>("/auth/login/", {
+    username: payload.email,
+    password: payload.password,
+  });
+  const { data: user } = await apiClient.get<ApiUser>("/auth/me/", {
+    headers: { Authorization: `Bearer ${tokens.access}` },
+  });
+  return { tokens, user };
+}
+
+export async function fetchCurrentUser(): Promise<ApiUser> {
+  const { data } = await apiClient.get<ApiUser>("/auth/me/");
+  return data;
+}
+
+// ---- Sourcing ----
+
+export interface SubmitSourcingPayload {
+  product_name: string;
+  category: string;
+  size_or_shoe: string;
+  budget_max_xaf: number | null;
+  description: string;
+  source_url?: string;
+  image: File | null;
+}
+
+export async function submitSourcingRequest(payload: SubmitSourcingPayload): Promise<ApiSourcingRequest> {
+  const form = new FormData();
+  form.append("product_name", payload.product_name);
+  form.append("category", payload.category);
+  form.append("size_or_shoe", payload.size_or_shoe);
+  if (payload.budget_max_xaf !== null) {
+    form.append("budget_max_xaf", String(payload.budget_max_xaf));
+  }
+  form.append("description", payload.description);
+  if (payload.source_url) form.append("source_url", payload.source_url);
+  if (payload.image) form.append("reference_image", payload.image);
+
+  const { data } = await apiClient.post<ApiSourcingRequest>("/sourcing/requests/", form);
+  return data;
+}
+
+// ---- Commande & paiement ----
+
+export async function checkoutOrder(payload: CheckoutPayload): Promise<ApiOrder> {
+  const { data } = await apiClient.post<ApiOrder>("/orders/checkout/", payload);
+  return data;
+}
+
+export async function fetchOrder(orderId: string): Promise<ApiOrder> {
+  const { data } = await apiClient.get<ApiOrder>(`/orders/${orderId}/`);
+  return data;
+}
+
+export async function initiatePayment(payload: InitiatePaymentPayload): Promise<ApiTransaction> {
+  const { data } = await apiClient.post<ApiTransaction>("/payments/initiate/", payload);
+  return data;
+}
+
+/**
+ * Environnement de démonstration : aucune clé API CinetPay/Flutterwave réelle
+ * n'est configurée, donc aucun agrégateur externe ne peut appeler notre
+ * webhook. On simule ici exactement l'appel qu'un agrégateur ferait une fois
+ * le paiement Mobile Money validé sur le téléphone du client.
+ */
+export async function simulateSandboxPaymentOutcome(
+  reference: string,
+  outcome: "success" | "failed"
+): Promise<void> {
+  await apiClient.post("/payments/webhook/", { provider: "sandbox", reference, status: outcome });
+}
+
+// ---- Back-office / administration ----
+// Ces fonctions appellent les mêmes endpoints que côté client : le backend
+// élargit automatiquement le résultat (toutes les commandes / demandes, pas
+// seulement celles de l'utilisateur courant) lorsque son rôle est "admin".
+
+export async function fetchAdminSummary(): Promise<AdminDashboardSummary> {
+  const { data } = await apiClient.get<AdminDashboardSummary>("/orders/admin-summary/");
+  return data;
+}
+
+export async function fetchAllOrders(): Promise<ApiOrder[]> {
+  const { data } = await apiClient.get<{ results: ApiOrder[] }>("/orders/");
+  return data.results;
+}
+
+export async function advanceOrderStatus(orderId: string, status: ApiOrderStatus): Promise<ApiOrder> {
+  const { data } = await apiClient.post<ApiOrder>(`/orders/${orderId}/advance_status/`, { status });
+  return data;
+}
+
+export async function settleOrderBalance(
+  orderId: string,
+  paymentMethod: "cash_on_delivery" | "momo_on_delivery" = "cash_on_delivery"
+): Promise<ApiOrder> {
+  const { data } = await apiClient.post<ApiOrder>(`/orders/${orderId}/settle_balance/`, {
+    payment_method: paymentMethod,
+  });
+  return data;
+}
+
+export async function fetchAllSourcingRequests(): Promise<ApiSourcingRequest[]> {
+  const { data } = await apiClient.get<{ results: ApiSourcingRequest[] }>("/sourcing/requests/");
+  return data.results;
+}
+
+export async function quoteSourcingRequest(
+  id: string,
+  quotedPriceXaf: number,
+  adminNotes: string
+): Promise<ApiSourcingRequest> {
+  const { data } = await apiClient.post<ApiSourcingRequest>(`/sourcing/requests/${id}/quote/`, {
+    quoted_price_xaf: quotedPriceXaf,
+    admin_notes: adminNotes,
+  });
+  return data;
+}
+
+export async function rejectSourcingRequest(id: string, adminNotes: string): Promise<ApiSourcingRequest> {
+  const { data } = await apiClient.post<ApiSourcingRequest>(`/sourcing/requests/${id}/reject/`, {
+    admin_notes: adminNotes,
+  });
+  return data;
+}
