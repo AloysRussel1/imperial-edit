@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from apps.notifications.tasks import send_sourcing_quote_notification
-from apps.orders.models import Order, OrderStatus
+from apps.orders.models import Order, OrderStatus, OrderStatusHistory
+from apps.orders.services import _generate_tracking_number
 
 from .models import SourcingRequest, SourcingStatus
 
@@ -59,6 +60,7 @@ def convert_to_order(request_obj: SourcingRequest, *, deposit_percentage: int, s
 
     order = Order.objects.create(
         order_number=f"IE-SRC-{uuid.uuid4().hex[:8].upper()}",
+        tracking_number=_generate_tracking_number(),
         customer=request_obj.customer,
         status=OrderStatus.PENDING_DEPOSIT,
         subtotal_xaf=request_obj.quoted_price_xaf,
@@ -66,8 +68,9 @@ def convert_to_order(request_obj: SourcingRequest, *, deposit_percentage: int, s
         deposit_percentage=deposit_percentage,
         shipping_address=shipping_address,
         delivery_city=delivery_city,
-        tracking_notes=f"Commande sur mesure issue de la demande de sourcing #{request_obj.id}",
+        carrier_notes=f"Commande sur mesure issue de la demande de sourcing #{request_obj.id}",
     )
+    OrderStatusHistory.objects.create(order=order, status=OrderStatus.PENDING_DEPOSIT)
     request_obj.converted_order = order
     request_obj.status = SourcingStatus.CONVERTED
     request_obj.save(update_fields=["converted_order", "status", "updated_at"])

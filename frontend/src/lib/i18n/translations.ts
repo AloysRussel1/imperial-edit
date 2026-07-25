@@ -3,6 +3,7 @@ const fr = {
     newArrivals: "Nouveautés",
     catalog: "Catalogue",
     sourcing: "Sourcing Sur Photo",
+    tracking: "Suivi de Colis",
     about: "À Propos",
   },
   languageSwitcher: {
@@ -40,9 +41,10 @@ const fr = {
   orderStatus: {
     pending_deposit: "En attente d'acompte",
     deposit_paid: "Acompte payé",
-    in_transit: "En cours d'expédition",
-    ready_for_delivery: "Prête à livrer",
-    completed: "Livrée",
+    sourcing_in_progress: "Achat en cours en Europe",
+    shipped_from_europe: "Expédié depuis l'Europe",
+    arrived_in_cameroon: "Disponible en agence",
+    delivered_and_completed: "Livrée & soldée",
     cancelled: "Annulée",
   },
   adminSourcingStatus: {
@@ -209,6 +211,7 @@ const en: typeof fr = {
     newArrivals: "New Arrivals",
     catalog: "Catalog",
     sourcing: "Photo Sourcing",
+    tracking: "Track Package",
     about: "About",
   },
   languageSwitcher: {
@@ -246,9 +249,10 @@ const en: typeof fr = {
   orderStatus: {
     pending_deposit: "Awaiting deposit",
     deposit_paid: "Deposit paid",
-    in_transit: "In transit",
-    ready_for_delivery: "Ready for delivery",
-    completed: "Delivered",
+    sourcing_in_progress: "Sourcing in Europe",
+    shipped_from_europe: "Shipped from Europe",
+    arrived_in_cameroon: "Available at agency",
+    delivered_and_completed: "Delivered & settled",
     cancelled: "Cancelled",
   },
   adminSourcingStatus: {

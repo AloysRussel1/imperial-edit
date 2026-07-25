@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderItem, OrderStatusHistory
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -33,10 +33,21 @@ class OrderItemSerializer(serializers.ModelSerializer):
         )
 
 
+class OrderStatusHistorySerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = OrderStatusHistory
+        fields = ("id", "status", "status_display", "note", "created_at")
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    status_history = OrderStatusHistorySerializer(many=True, read_only=True)
     amount_remaining_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     deposit_due_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    tracking_progress_percent = serializers.IntegerField(read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     customer_name = serializers.SerializerMethodField()
     customer_email = serializers.CharField(source="customer.email", read_only=True)
     customer_whatsapp = serializers.CharField(source="customer.whatsapp_number", read_only=True)
@@ -46,7 +57,10 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "order_number",
+            "tracking_number",
             "status",
+            "status_display",
+            "tracking_progress_percent",
             "currency",
             "customer_name",
             "customer_email",
@@ -62,14 +76,53 @@ class OrderSerializer(serializers.ModelSerializer):
             "coupon_code",
             "shipping_address",
             "delivery_city",
-            "tracking_notes",
+            "carrier_notes",
+            "estimated_delivery_date",
             "created_at",
             "items",
+            "status_history",
         )
-        read_only_fields = ("order_number", "status", "amount_paid_xaf", "total_xaf")
+        read_only_fields = ("order_number", "tracking_number", "status", "amount_paid_xaf", "total_xaf")
 
     def get_customer_name(self, obj: Order) -> str:
         return f"{obj.customer.first_name} {obj.customer.last_name}".strip() or obj.customer.email
+
+
+class OrderTrackingSerializer(serializers.ModelSerializer):
+    """
+    Vue publique et volontairement restreinte d'une commande : accessible sans
+    authentification à quiconque connaît le `tracking_number` (le code fait
+    office de "clé" — même logique qu'un suivi de colis postal classique).
+    N'expose donc jamais l'e-mail ni le numéro WhatsApp du client.
+    """
+
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    tracking_progress_percent = serializers.IntegerField(read_only=True)
+    amount_remaining_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    deposit_due_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    status_history = OrderStatusHistorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = (
+            "order_number",
+            "tracking_number",
+            "status",
+            "status_display",
+            "tracking_progress_percent",
+            "estimated_delivery_date",
+            "delivery_city",
+            "shipping_address",
+            "currency",
+            "total_xaf",
+            "amount_paid_xaf",
+            "amount_remaining_xaf",
+            "deposit_due_xaf",
+            "deposit_percentage",
+            "carrier_notes",
+            "created_at",
+            "status_history",
+        )
 
 
 class CreateOrderSerializer(serializers.Serializer):

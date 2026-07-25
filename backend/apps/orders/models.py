@@ -15,12 +15,25 @@ class DepositOption(models.IntegerChoices):
 
 
 class OrderStatus(models.TextChoices):
-    PENDING_DEPOSIT = "pending_deposit", "En attente de paiement de l'acompte"
-    DEPOSIT_PAID = "deposit_paid", "Acompte reçu - Commande validée"
-    IN_TRANSIT = "in_transit", "En cours d'acheminement Europe -> Cameroun"
-    READY_FOR_DELIVERY = "ready_for_delivery", "Arrivé au Cameroun - Prêt pour livraison"
-    COMPLETED = "completed", "Solde payé + Colis livré"
+    PENDING_DEPOSIT = "pending_deposit", "En attente d'acompte"
+    DEPOSIT_PAID = "deposit_paid", "Acompte payé & Commande validée"
+    SOURCING_IN_PROGRESS = "sourcing_in_progress", "Achat en cours en Europe (Paris / Milan / Londres)"
+    SHIPPED_FROM_EUROPE = "shipped_from_europe", "Expédié depuis l'Europe"
+    ARRIVED_IN_CAMEROON = "arrived_in_cameroon", "Disponible en agence au Cameroun"
+    DELIVERED_AND_COMPLETED = "delivered_and_completed", "Livré au client & Solde réglé"
     CANCELLED = "cancelled", "Annulé / Expiré"
+
+
+# Frise chronologique client (5 grandes étapes) : la commande "en attente d'acompte"
+# précède ce parcours et "annulé" en est l'exception — ni l'une ni l'autre n'a de
+# position dans la frise elle-même. Sert au calcul de la progression (%).
+TRACKING_MILESTONES = [
+    OrderStatus.DEPOSIT_PAID,
+    OrderStatus.SOURCING_IN_PROGRESS,
+    OrderStatus.SHIPPED_FROM_EUROPE,
+    OrderStatus.ARRIVED_IN_CAMEROON,
+    OrderStatus.DELIVERED_AND_COMPLETED,
+]
 
 
 class PaymentMethod(models.TextChoices):
@@ -62,11 +75,19 @@ class Order(BaseModel):
     shipping_address = models.TextField(blank=True)
     delivery_city = models.CharField(max_length=100, blank=True)
     reservation_expires_at = models.DateTimeField(null=True, blank=True)
-    tracking_notes = models.TextField(blank=True)
+    tracking_number = models.CharField(max_length=32, unique=True, editable=False, null=True, blank=True)
+    carrier_notes = models.TextField(
+        blank=True, help_text="Ex. « Colis dédouané à l'aéroport de Douala »."
+    )
+    estimated_delivery_date = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = "orders"
-        indexes = [models.Index(fields=["status"]), models.Index(fields=["order_number"])]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["order_number"]),
+            models.Index(fields=["tracking_number"]),
+        ]
 
     def __str__(self) -> str:
         return self.order_number
@@ -78,6 +99,12 @@ class Order(BaseModel):
     @property
     def deposit_due_xaf(self) -> Decimal:
         return (self.total_xaf * Decimal(self.deposit_percentage) / Decimal("100")).quantize(Decimal("0.01"))
+
+    @property
+    def tracking_progress_percent(self) -> int:
+        if self.status not in TRACKING_MILESTONES:
+            return 0
+        return round((TRACKING_MILESTONES.index(self.status) + 1) / len(TRACKING_MILESTONES) * 100)
 
 
 class OrderItem(BaseModel):
@@ -94,3 +121,22 @@ class OrderItem(BaseModel):
     @property
     def line_total_xaf(self) -> Decimal:
         return self.unit_price_xaf * self.quantity
+
+
+class OrderStatusHistory(BaseModel):
+    """Horodatage de chaque changement de statut — alimente la frise chronologique client."""
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    status = models.CharField(max_length=30, choices=OrderStatus.choices)
+    note = models.TextField(blank=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        db_table = "order_status_history"
+        ordering = ["created_at"]
+        verbose_name_plural = "order status history"
+
+    def __str__(self) -> str:
+        return f"{self.order.order_number} → {self.status}"

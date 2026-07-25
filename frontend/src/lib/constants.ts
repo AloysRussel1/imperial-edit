@@ -12,6 +12,7 @@ export const NAV_LINKS = [
   { labelKey: "nav.newArrivals", href: "/products?sort=new" },
   { labelKey: "nav.catalog", href: "/products" },
   { labelKey: "nav.sourcing", href: "/sourcing" },
+  { labelKey: "nav.tracking", href: "/tracking" },
   { labelKey: "nav.about", href: "/about" },
 ] as const;
 

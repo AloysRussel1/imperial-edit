@@ -3,24 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, PackageSearch, ShoppingBag } from "lucide-react";
+import { Loader2, PackageSearch, ShoppingBag, Truck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
 import { PayBalanceDialog } from "@/components/dashboard/pay-balance-dialog";
-import { fetchAllOrders, fetchAllSourcingRequests } from "@/lib/api";
+import { fetchAllSourcingRequests, fetchMyOrders } from "@/lib/api";
 import { ADMIN_SOURCING_STATUS_META, ORDER_STATUS_META } from "@/lib/order-status";
 import { useAuthStore } from "@/store/auth-store";
 import type { ApiOrder, ApiSourcingRequest } from "@/types";
 
 /**
- * Ces deux appels ciblent les mêmes endpoints que le dashboard admin
- * (`/api/orders/`, `/api/sourcing/requests/`) : le backend restreint déjà le
- * résultat aux seules ressources du `request.user` courant lorsque son rôle
- * n'est pas "admin" (voir `list_orders_for_customer` / `get_queryset`). Chaque
- * compte ne voit donc que ses propres commandes et demandes.
+ * `/orders/my-orders/` reste toujours restreint au compte connecté (même pour
+ * un admin) ; `/sourcing/requests/` s'appuie sur le même filtrage côté backend
+ * que le dashboard admin, élargi uniquement pour ce rôle-là.
  */
 export function CustomerDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -34,7 +32,7 @@ export function CustomerDashboard() {
   const loadAll = useCallback(async () => {
     setError(null);
     try {
-      const [ordersData, requestsData] = await Promise.all([fetchAllOrders(), fetchAllSourcingRequests()]);
+      const [ordersData, requestsData] = await Promise.all([fetchMyOrders(), fetchAllSourcingRequests()]);
       setOrders(ordersData);
       setRequests(requestsData);
     } catch {
@@ -111,6 +109,12 @@ export function CustomerDashboard() {
                       <p className="font-medium text-imperial-black">{order.order_number}</p>
                       <p className="text-xs text-imperial-black/45">
                         {new Date(order.created_at).toLocaleDateString("fr-FR")} · {order.delivery_city}
+                        {order.tracking_number ? (
+                          <>
+                            {" · "}
+                            <span className="tabular-nums">{order.tracking_number}</span>
+                          </>
+                        ) : null}
                       </p>
                     </div>
                     <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
@@ -128,12 +132,31 @@ export function CustomerDashboard() {
                     ))}
                   </ul>
 
+                  <div className="mt-4 grid grid-cols-2 gap-3 rounded-md bg-imperial-ivory p-3 text-sm sm:w-64">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-imperial-black/40">Acompte réglé</p>
+                      <Price amountXaf={Number(order.amount_paid_xaf)} className="font-semibold text-imperial-black" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-imperial-black/40">Solde restant</p>
+                      <Price
+                        amountXaf={remaining}
+                        className={remaining > 0 ? "font-semibold text-imperial-gold" : "font-semibold text-emerald-700"}
+                      />
+                    </div>
+                  </div>
+
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-imperial-black/10 pt-4">
-                    <p className="text-sm text-imperial-black/50">
-                      Payé : <Price amountXaf={Number(order.amount_paid_xaf)} className="font-medium text-imperial-black" />
-                      {" · "}
-                      Solde : <Price amountXaf={remaining} className="font-medium text-imperial-black" />
-                    </p>
+                    {order.tracking_number ? (
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/tracking/${order.tracking_number}`}>
+                          <Truck className="mr-1.5 h-3.5 w-3.5" />
+                          Suivre ce colis
+                        </Link>
+                      </Button>
+                    ) : (
+                      <span />
+                    )}
                     {remaining > 0 && order.status !== "cancelled" ? (
                       <PayBalanceDialog order={order} onSettled={loadAll} />
                     ) : null}

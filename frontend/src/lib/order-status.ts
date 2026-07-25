@@ -9,19 +9,46 @@ import type { ApiSourcingStatus, OrderStatus } from "@/types";
 export const ORDER_STATUS_META: Record<OrderStatus, { label: string; labelKey: string; variant: BadgeProps["variant"] }> = {
   pending_deposit: { label: "En attente d'acompte", labelKey: "orderStatus.pending_deposit", variant: "warning" },
   deposit_paid: { label: "Acompte payé", labelKey: "orderStatus.deposit_paid", variant: "info" },
-  in_transit: { label: "En cours d'expédition", labelKey: "orderStatus.in_transit", variant: "info" },
-  ready_for_delivery: { label: "Prête à livrer", labelKey: "orderStatus.ready_for_delivery", variant: "gold" },
-  completed: { label: "Livrée", labelKey: "orderStatus.completed", variant: "success" },
+  sourcing_in_progress: {
+    label: "Achat en cours en Europe",
+    labelKey: "orderStatus.sourcing_in_progress",
+    variant: "info",
+  },
+  shipped_from_europe: {
+    label: "Expédié depuis l'Europe",
+    labelKey: "orderStatus.shipped_from_europe",
+    variant: "gold",
+  },
+  arrived_in_cameroon: {
+    label: "Disponible en agence",
+    labelKey: "orderStatus.arrived_in_cameroon",
+    variant: "gold",
+  },
+  delivered_and_completed: {
+    label: "Livrée & soldée",
+    labelKey: "orderStatus.delivered_and_completed",
+    variant: "success",
+  },
   cancelled: { label: "Annulée", labelKey: "orderStatus.cancelled", variant: "outline" },
 };
 
 export const ORDER_STATUS_OPTIONS: OrderStatus[] = [
   "pending_deposit",
   "deposit_paid",
-  "in_transit",
-  "ready_for_delivery",
-  "completed",
+  "sourcing_in_progress",
+  "shipped_from_europe",
+  "arrived_in_cameroon",
+  "delivered_and_completed",
   "cancelled",
+];
+
+/** Les 5 grandes étapes de la frise (hors "en attente" et "annulée", qui ne font pas partie du parcours logistique). */
+export const TRACKING_MILESTONES: OrderStatus[] = [
+  "deposit_paid",
+  "sourcing_in_progress",
+  "shipped_from_europe",
+  "arrived_in_cameroon",
+  "delivered_and_completed",
 ];
 
 export const ADMIN_SOURCING_STATUS_META: Record<ApiSourcingStatus, { label: string; labelKey: string; variant: BadgeProps["variant"] }> = {

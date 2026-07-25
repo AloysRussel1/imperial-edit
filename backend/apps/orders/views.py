@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,8 +11,8 @@ from apps.promotions.services import apply_coupon
 from apps.sourcing.selectors import list_pending_requests
 
 from .models import Cart, Order, OrderStatus
-from .selectors import dashboard_financial_summary, list_orders_for_customer
-from .serializers import CheckoutSerializer, CreateOrderSerializer, OrderSerializer
+from .selectors import dashboard_financial_summary, get_order_for_tracking, list_orders_for_customer
+from .serializers import CheckoutSerializer, CreateOrderSerializer, OrderSerializer, OrderTrackingSerializer
 from .services import (
     advance_logistics_status,
     cancel_order,
@@ -24,6 +24,7 @@ from .services import (
 
 class AdvanceStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=OrderStatus.choices)
+    note = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class SettleBalanceSerializer(serializers.Serializer):
@@ -98,6 +99,15 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["get"], url_path="my-orders")
+    def my_orders(self, request):
+        """
+        Toujours restreint aux commandes du compte connecté, quel que soit son
+        rôle — contrairement à la liste de base qui s'élargit pour un admin.
+        """
+        orders = list_orders_for_customer(request.user)
+        return Response(OrderSerializer(orders, many=True).data)
+
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         order = self.get_object()
@@ -106,11 +116,17 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=(IsAdminRole,))
     def advance_status(self, request, pk=None):
-        """Back-office : fait passer une commande à l'étape logistique choisie."""
+        """Back-office : fait passer une commande à l'étape logistique choisie,
+        avec une note de suivi optionnelle affichée sur la frise du client."""
         payload = AdvanceStatusSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         order = self.get_object()
-        advance_logistics_status(order, payload.validated_data["status"])
+        advance_logistics_status(
+            order,
+            payload.validated_data["status"],
+            note=payload.validated_data["note"],
+            changed_by=request.user,
+        )
         return Response(OrderSerializer(order).data)
 
     @action(detail=True, methods=["post"], permission_classes=(IsAdminRole,))
@@ -140,6 +156,24 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Response(OrderSerializer(order).data)
 
 
+class OrderTrackingView(APIView):
+    """
+    Suivi de colis public — accessible sans compte, à partir du seul
+    `tracking_number` (`IC-2026-X89B`) ou, pour les liens internes déjà
+    authentifiés, de l'`id` technique de la commande. Le code de suivi fait
+    office d'autorisation (comme pour un colis postal) : voir la note de
+    sécurité sur `OrderTrackingSerializer`.
+    """
+
+    permission_classes = (AllowAny,)
+
+    def get(self, request, lookup: str):
+        order = get_order_for_tracking(lookup)
+        if order is None:
+            return Response({"detail": "Aucune commande ne correspond à ce numéro de suivi."}, status=404)
+        return Response(OrderTrackingSerializer(order).data)
+
+
 class AdminDashboardSummaryView(APIView):
     """KPIs consolidés pour le tableau de bord administrateur."""
 
@@ -147,17 +181,12 @@ class AdminDashboardSummaryView(APIView):
 
     def get(self, request):
         finance = dashboard_financial_summary()
-        active_statuses = [
-            OrderStatus.PENDING_DEPOSIT,
-            OrderStatus.DEPOSIT_PAID,
-            OrderStatus.IN_TRANSIT,
-            OrderStatus.READY_FOR_DELIVERY,
-        ]
+        terminal_statuses = [OrderStatus.DELIVERED_AND_COMPLETED, OrderStatus.CANCELLED]
         return Response(
             {
                 **finance,
                 "orders_count": Order.objects.count(),
-                "active_orders_count": Order.objects.filter(status__in=active_statuses).count(),
+                "active_orders_count": Order.objects.exclude(status__in=terminal_statuses).count(),
                 "pending_sourcing_count": list_pending_requests().count(),
             }
         )

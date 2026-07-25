@@ -1,3 +1,5 @@
+import uuid
+
 from django.utils import timezone
 
 from .models import Order, OrderStatus
@@ -9,6 +11,20 @@ def get_active_cart_for_customer(customer):
 
 def list_orders_for_customer(customer):
     return Order.objects.filter(customer=customer).prefetch_related("items").order_by("-created_at")
+
+
+def get_order_for_tracking(lookup: str) -> Order | None:
+    """Résout une commande à partir de son `tracking_number` (`IC-2026-X89B`,
+    saisi par un client sans compte) ou, à défaut, de son `id` (UUID) — pour les
+    liens internes déjà authentifiés qui connaissent l'identifiant technique."""
+    base = Order.objects.select_related("customer").prefetch_related("status_history")
+    order = base.filter(tracking_number__iexact=lookup).first()
+    if order is not None:
+        return order
+    try:
+        return base.filter(id=uuid.UUID(lookup)).first()
+    except (ValueError, AttributeError):
+        return None
 
 
 def list_expired_unpaid_orders():

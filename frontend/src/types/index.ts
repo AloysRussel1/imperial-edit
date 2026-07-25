@@ -61,9 +61,10 @@ export interface ProductDetail extends Product {
 export type OrderStatus =
   | "pending_deposit"
   | "deposit_paid"
-  | "in_transit"
-  | "ready_for_delivery"
-  | "completed"
+  | "sourcing_in_progress"
+  | "shipped_from_europe"
+  | "arrived_in_cameroon"
+  | "delivered_and_completed"
   | "cancelled";
 
 export type PaymentMethod = "mtn_momo" | "orange_money" | "card";
@@ -151,15 +152,27 @@ export interface ApiOrderItem {
 export type ApiOrderStatus =
   | "pending_deposit"
   | "deposit_paid"
-  | "in_transit"
-  | "ready_for_delivery"
-  | "completed"
+  | "sourcing_in_progress"
+  | "shipped_from_europe"
+  | "arrived_in_cameroon"
+  | "delivered_and_completed"
   | "cancelled";
+
+export interface ApiOrderStatusHistoryEntry {
+  id: string;
+  status: ApiOrderStatus;
+  status_display: string;
+  note: string;
+  created_at: string;
+}
 
 export interface ApiOrder {
   id: string;
   order_number: string;
+  tracking_number: string | null;
   status: ApiOrderStatus;
+  status_display: string;
+  tracking_progress_percent: number;
   currency: string;
   customer_name: string;
   customer_email: string;
@@ -175,9 +188,32 @@ export interface ApiOrder {
   coupon_code: string;
   shipping_address: string;
   delivery_city: string;
-  tracking_notes: string;
+  carrier_notes: string;
+  estimated_delivery_date: string | null;
   created_at: string;
   items: ApiOrderItem[];
+  status_history: ApiOrderStatusHistoryEntry[];
+}
+
+/** Vue publique et restreinte d'une commande (endpoint `/tracking/`, sans authentification). */
+export interface ApiOrderTracking {
+  order_number: string;
+  tracking_number: string | null;
+  status: ApiOrderStatus;
+  status_display: string;
+  tracking_progress_percent: number;
+  estimated_delivery_date: string | null;
+  delivery_city: string;
+  shipping_address: string;
+  currency: string;
+  total_xaf: string;
+  amount_paid_xaf: string;
+  amount_remaining_xaf: string;
+  deposit_due_xaf: string;
+  deposit_percentage: 50 | 70 | 100;
+  carrier_notes: string;
+  created_at: string;
+  status_history: ApiOrderStatusHistoryEntry[];
 }
 
 export interface CheckoutPayload {

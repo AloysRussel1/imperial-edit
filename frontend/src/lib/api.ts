@@ -6,6 +6,7 @@ import type {
   AdminDashboardSummary,
   ApiOrder,
   ApiOrderStatus,
+  ApiOrderTracking,
   ApiProduct,
   ApiSourcingRequest,
   ApiTransaction,
@@ -223,6 +224,22 @@ export async function fetchOrder(orderId: string): Promise<ApiOrder> {
   return data;
 }
 
+/** Toujours restreint au compte connecté, quel que soit son rôle (admin inclus). */
+export async function fetchMyOrders(): Promise<ApiOrder[]> {
+  const { data } = await apiClient.get<ApiOrder[]>("/orders/my-orders/");
+  return data;
+}
+
+/**
+ * Suivi de colis public — aucune authentification requise. `lookup` accepte le
+ * numéro de suivi (`IC-2026-X89B`, saisi par le client) ou l'id technique de
+ * la commande (utilisé par les liens internes déjà connectés).
+ */
+export async function fetchOrderTracking(lookup: string): Promise<ApiOrderTracking> {
+  const { data } = await apiClient.get<ApiOrderTracking>(`/orders/${encodeURIComponent(lookup)}/tracking/`);
+  return data;
+}
+
 export async function initiatePayment(payload: InitiatePaymentPayload): Promise<ApiTransaction> {
   const { data } = await apiClient.post<ApiTransaction>("/payments/initiate/", payload);
   return data;
@@ -256,8 +273,12 @@ export async function fetchAllOrders(): Promise<ApiOrder[]> {
   return data.results;
 }
 
-export async function advanceOrderStatus(orderId: string, status: ApiOrderStatus): Promise<ApiOrder> {
-  const { data } = await apiClient.post<ApiOrder>(`/orders/${orderId}/advance_status/`, { status });
+export async function advanceOrderStatus(
+  orderId: string,
+  status: ApiOrderStatus,
+  note?: string
+): Promise<ApiOrder> {
+  const { data } = await apiClient.post<ApiOrder>(`/orders/${orderId}/advance_status/`, { status, note });
   return data;
 }
 
