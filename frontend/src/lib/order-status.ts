@@ -32,6 +32,21 @@ export const ORDER_STATUS_META: Record<OrderStatus, { label: string; labelKey: s
   cancelled: { label: "Annulée", labelKey: "orderStatus.cancelled", variant: "outline" },
 };
 
+/**
+ * Accès défensif : si une commande porte en base un statut hérité d'un ancien
+ * modèle (ex. après un renommage d'enum côté backend) qui n'a pas encore été
+ * migré, on affiche le code brut au lieu de faire planter l'écran entier.
+ */
+export function getOrderStatusMeta(status: string): { label: string; labelKey: string; variant: BadgeProps["variant"] } {
+  return (
+    ORDER_STATUS_META[status as OrderStatus] ?? {
+      label: status,
+      labelKey: "",
+      variant: "outline",
+    }
+  );
+}
+
 export const ORDER_STATUS_OPTIONS: OrderStatus[] = [
   "pending_deposit",
   "deposit_paid",

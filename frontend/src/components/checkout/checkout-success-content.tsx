@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Price } from "@/components/common/price";
 import { useTranslation } from "@/hooks/use-translation";
 import { fetchOrder } from "@/lib/api";
-import { ORDER_STATUS_META } from "@/lib/order-status";
+import { getOrderStatusMeta } from "@/lib/order-status";
 import type { ApiOrder } from "@/types";
 
 export function CheckoutSuccessContent() {
@@ -41,7 +41,7 @@ export function CheckoutSuccessContent() {
     );
   }
 
-  const statusMeta = order ? ORDER_STATUS_META[order.status] : null;
+  const statusMeta = order ? getOrderStatusMeta(order.status) : null;
 
   return (
     <div className="mx-auto max-w-lg space-y-6 rounded-lg border border-imperial-gold/30 bg-imperial-gold/5 p-8 text-center">
@@ -63,7 +63,9 @@ export function CheckoutSuccessContent() {
           <>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-imperial-black/50">{t("checkoutSuccess.status")}</span>
-              {statusMeta ? <Badge variant={statusMeta.variant}>{t(statusMeta.labelKey)}</Badge> : null}
+              {statusMeta ? (
+                <Badge variant={statusMeta.variant}>{statusMeta.labelKey ? t(statusMeta.labelKey) : statusMeta.label}</Badge>
+              ) : null}
             </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-imperial-black/50">{t("checkoutSuccess.delivery")}</span>

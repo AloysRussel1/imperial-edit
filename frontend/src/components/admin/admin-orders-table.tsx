@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Price } from "@/components/common/price";
 import { useTranslation } from "@/hooks/use-translation";
 import { advanceOrderStatus, settleOrderBalance } from "@/lib/api";
-import { ORDER_STATUS_META, ORDER_STATUS_OPTIONS } from "@/lib/order-status";
+import { getOrderStatusMeta, ORDER_STATUS_META, ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 import type { ApiOrder, ApiOrderStatus } from "@/types";
 
 interface AdminOrdersTableProps {
@@ -64,8 +64,8 @@ function AdvanceStatusDialog({ order, busy, onAdvance }: Omit<RowActionsProps, "
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-imperial-black/40" />
           ) : (
-            <Badge variant={ORDER_STATUS_META[order.status].variant}>
-              {t(ORDER_STATUS_META[order.status].labelKey)}
+            <Badge variant={getOrderStatusMeta(order.status).variant}>
+              {getOrderStatusMeta(order.status).labelKey ? t(getOrderStatusMeta(order.status).labelKey) : order.status}
             </Badge>
           )}
         </button>

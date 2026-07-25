@@ -11,7 +11,7 @@ import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
 import { PayBalanceDialog } from "@/components/dashboard/pay-balance-dialog";
 import { fetchAllSourcingRequests, fetchMyOrders } from "@/lib/api";
-import { ADMIN_SOURCING_STATUS_META, ORDER_STATUS_META } from "@/lib/order-status";
+import { ADMIN_SOURCING_STATUS_META, getOrderStatusMeta } from "@/lib/order-status";
 import { useAuthStore } from "@/store/auth-store";
 import type { ApiOrder, ApiSourcingRequest } from "@/types";
 
@@ -100,7 +100,7 @@ export function CustomerDashboard() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
-              const statusMeta = ORDER_STATUS_META[order.status];
+              const statusMeta = getOrderStatusMeta(order.status);
               const remaining = Number(order.amount_remaining_xaf);
               return (
                 <div key={order.id} className="rounded-lg border border-imperial-black/10 bg-white p-5">
