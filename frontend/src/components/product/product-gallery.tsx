@@ -52,7 +52,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         />
       </div>
       {images.length > 1 ? (
-        <div className="flex gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-1">
           {images.map((image, index) => (
             <button
               key={image.id}
@@ -60,7 +60,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
               onClick={() => setActiveIndex(index)}
               aria-label={`Voir la photo ${index + 1}`}
               className={cn(
-                "relative aspect-square w-16 overflow-hidden rounded-md border-2 transition-colors",
+                "relative aspect-square w-16 shrink-0 overflow-hidden rounded-md border-2 transition-colors",
                 index === activeIndex ? "border-imperial-gold" : "border-transparent"
               )}
             >

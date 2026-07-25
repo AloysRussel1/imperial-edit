@@ -22,9 +22,11 @@ export function Header() {
           <MobileNav />
         </div>
 
-        <Link href="/" className="flex items-center gap-2">
-          <Gem className="h-5 w-5 text-imperial-gold" strokeWidth={1.5} />
-          <span className="font-display text-lg tracking-wide text-imperial-black">The Imperial Edit</span>
+        <Link href="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2">
+          <Gem className="h-5 w-5 shrink-0 text-imperial-gold" strokeWidth={1.5} />
+          <span className="truncate font-display text-base tracking-wide text-imperial-black sm:text-lg">
+            The Imperial Edit
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
@@ -39,10 +41,12 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-1">
-          <SearchDialog />
-          <LanguageSwitcher />
-          <CurrencySwitcher />
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <div className="hidden items-center gap-0.5 sm:flex sm:gap-1">
+            <SearchDialog />
+            <LanguageSwitcher />
+            <CurrencySwitcher />
+          </div>
           <CartSheet />
           <AccountMenu />
         </div>

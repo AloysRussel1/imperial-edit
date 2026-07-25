@@ -5,10 +5,12 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
     font-feature-settings: "liga" 1, "kern" 1;
+    overflow-x: hidden;
   }
 
   ::selection {

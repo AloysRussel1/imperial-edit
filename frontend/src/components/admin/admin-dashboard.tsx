@@ -162,7 +162,7 @@ export function AdminDashboard() {
           label={t("admin.kpi.totalRevenue")}
           value={<Price amountXaf={summary?.total_revenue_xaf ?? 0} />}
         />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={Wallet}
             label={t("admin.kpi.depositsCollected")}
