@@ -297,6 +297,16 @@ class Command(BaseCommand):
         except requests.RequestException as exc:
             self.stderr.write(self.style.WARNING(f"Échec téléchargement {url} pour {product.slug}: {exc}"))
             return
-        image = ProductImage(product=product, position=position)
-        image.image.save(f"{product.slug}-{position}.jpg", ContentFile(response.content), save=False)
-        image.save()
+        # `image.image.save()` ne se contente pas d'écrire un enregistrement :
+        # il déclenche l'upload réel vers Cloudinary (MEDIA_STORAGE_BACKEND).
+        # Des identifiants Cloudinary absents/invalides sur Render lèvent ici
+        # une exception qui, non interceptée, remontait jusqu'au build entier
+        # (cette méthode est appelée dans le transaction.atomic() du seeding)
+        # et faisait échouer tout le déploiement pour un simple problème
+        # d'image — jamais une raison de bloquer la création des produits.
+        try:
+            image = ProductImage(product=product, position=position)
+            image.image.save(f"{product.slug}-{position}.jpg", ContentFile(response.content), save=False)
+            image.save()
+        except Exception as exc:  # noqa: BLE001 - dépend de la lib Cloudinary, pas d'un type précis
+            self.stderr.write(self.style.WARNING(f"Échec upload image pour {product.slug}: {exc}"))
