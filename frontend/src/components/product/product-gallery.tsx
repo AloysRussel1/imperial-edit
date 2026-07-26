@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { type MouseEvent, useRef, useState } from "react";
 
+import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { cn } from "@/lib/utils";
 import type { ProductImage } from "@/types";
 
@@ -14,6 +15,10 @@ export function ProductGallery({ images }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
   const [isZooming, setIsZooming] = useState(false);
+  // Un lien Cloudinary cassé ne doit jamais afficher l'icône "image cassée"
+  // du navigateur — on bascule sur une vignette de repli. Indexé par id de
+  // photo pour ne pas masquer les vignettes valides à côté d'une en échec.
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set());
   const frameRef = useRef<HTMLDivElement>(null);
 
   const active = images[activeIndex] ?? images[0];
@@ -38,18 +43,23 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         onMouseEnter={() => setIsZooming(true)}
         onMouseLeave={() => setIsZooming(false)}
       >
-        <Image
-          src={active.url}
-          alt={active.alt}
-          fill
-          priority
-          sizes="(min-width: 1024px) 45vw, 100vw"
-          className="object-cover transition-transform duration-300 ease-out"
-          style={{
-            transformOrigin: zoomOrigin,
-            transform: isZooming ? "scale(1.8)" : "scale(1)",
-          }}
-        />
+        {failedIds.has(active.id) ? (
+          <PlaceholderImage hue={30} className="absolute inset-0" />
+        ) : (
+          <Image
+            src={active.url}
+            alt={active.alt}
+            fill
+            priority
+            sizes="(min-width: 1024px) 45vw, 100vw"
+            className="object-cover transition-transform duration-300 ease-out"
+            style={{
+              transformOrigin: zoomOrigin,
+              transform: isZooming ? "scale(1.8)" : "scale(1)",
+            }}
+            onError={() => setFailedIds((prev) => new Set(prev).add(active.id))}
+          />
+        )}
       </div>
       {images.length > 1 ? (
         <div className="flex gap-3 overflow-x-auto pb-1">
@@ -64,7 +74,18 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                 index === activeIndex ? "border-imperial-gold" : "border-transparent"
               )}
             >
-              <Image src={image.url} alt={image.alt} fill sizes="64px" className="object-cover" />
+              {failedIds.has(image.id) ? (
+                <PlaceholderImage hue={30} className="absolute inset-0" />
+              ) : (
+                <Image
+                  src={image.url}
+                  alt={image.alt}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                  onError={() => setFailedIds((prev) => new Set(prev).add(image.id))}
+                />
+              )}
             </button>
           ))}
         </div>

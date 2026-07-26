@@ -13,8 +13,12 @@ const nextConfig = {
       { protocol: "http", hostname: "localhost", port: "8000" },
       { protocol: "http", hostname: "web", port: "8000" },
       // Backend Django en production (Render) — au cas où un média serait
-      // servi directement depuis l'API plutôt que Cloudinary.
-      { protocol: "https", hostname: "*.onrender.com" },
+      // servi directement depuis l'API plutôt que Cloudinary. `**` (et pas
+      // seulement `*`) pour rester valide même si Render change le format de
+      // suffixe d'instance ; le nom exact actuel est listé en plus pour la
+      // clarté.
+      { protocol: "https", hostname: "**.onrender.com" },
+      { protocol: "https", hostname: "imperial-backend-iwu8.onrender.com" },
     ],
   },
 };
