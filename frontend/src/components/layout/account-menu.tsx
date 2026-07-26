@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, LogIn, LogOut, Store, User, UserPlus } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Package, Store, User, UserPlus } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -72,9 +72,17 @@ export function AccountMenu() {
         <DropdownMenuItem asChild>
           <Link href="/admin-dashboard" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
-            Espace vendeur (démo)
+            Espace administrateur (démo)
           </Link>
         </DropdownMenuItem>
+        {user && (user.role === "admin" || user.role === "vendor") ? (
+          <DropdownMenuItem asChild>
+            <Link href="/vendor-dashboard" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Mes produits
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -56,6 +56,8 @@ export interface ProductDetail extends Product {
   variants: ProductVariant[];
   default_deposit_percentage: DepositPercentage;
   availability: ProductAvailability;
+  vendorEmail: string | null;
+  is_active: boolean;
 }
 
 export type OrderStatus =
@@ -71,12 +73,14 @@ export type PaymentMethod = "mtn_momo" | "orange_money" | "card";
 
 // ---- Formes brutes renvoyées par l'API Django (avant adaptation côté frontend) ----
 
+export type UserRole = "admin" | "vendor" | "customer";
+
 export interface ApiUser {
   id: string;
   email: string;
   first_name: string;
   last_name: string;
-  role: "admin" | "customer";
+  role: UserRole;
   phone_number: string;
   whatsapp_number: string;
   city: string;
@@ -137,6 +141,7 @@ export interface ApiProduct {
   default_deposit_percentage: DepositPercentage;
   images: ApiProductImage[];
   variants: ApiProductVariant[];
+  vendor_email: string | null;
 }
 
 export interface ApiOrderItem {

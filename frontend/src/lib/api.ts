@@ -164,10 +164,12 @@ function mapApiProduct(product: ApiProduct): ProductDetail {
     compare_at_price_xaf: product.compare_at_price_xaf ? Number(product.compare_at_price_xaf) : null,
     is_on_sale: product.is_on_sale,
     is_featured: product.is_featured,
+    is_active: product.is_active,
     description: product.description,
     category: product.category,
     default_deposit_percentage: product.default_deposit_percentage,
     availability: deriveAvailability(product),
+    vendorEmail: product.vendor_email,
     images: product.images.map((image) => ({
       id: image.id,
       url: image.image,
@@ -190,6 +192,16 @@ function mapApiProduct(product: ApiProduct): ProductDetail {
 export async function fetchProducts(): Promise<ProductDetail[]> {
   const { data } = await apiClient.get<{ results: ApiProduct[] }>("/products/");
   return data.results.map(mapApiProduct);
+}
+
+/**
+ * Catalogue à gérer pour l'utilisateur connecté : ses propres fiches pour un
+ * vendeur, le catalogue complet pour un admin. Requiert le rôle admin ou
+ * vendor côté backend (403 sinon).
+ */
+export async function fetchMyProducts(): Promise<ProductDetail[]> {
+  const { data } = await apiClient.get<ApiProduct[]>("/products/my-products/");
+  return data.map(mapApiProduct);
 }
 
 export async function fetchProductBySlug(slug: string): Promise<ProductDetail | null> {

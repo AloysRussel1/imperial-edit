@@ -6,6 +6,7 @@ from apps.common.models import UUIDModel
 
 class UserRole(models.TextChoices):
     ADMIN = "admin", "Administrateur"
+    VENDOR = "vendor", "Vendeur"
     CUSTOMER = "customer", "Client"
 
 

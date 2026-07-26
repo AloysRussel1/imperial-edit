@@ -40,6 +40,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     is_on_sale = serializers.BooleanField(read_only=True)
+    # Lecture seule : l'attribution du vendeur est décidée côté serveur
+    # (perform_create), jamais fournie par le client.
+    vendor_email = serializers.EmailField(source="vendor.email", read_only=True, default=None)
 
     class Meta:
         model = Product
@@ -59,4 +62,5 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "default_deposit_percentage",
             "images",
             "variants",
+            "vendor_email",
         )

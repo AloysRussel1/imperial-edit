@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.products.models import Category, Product, ProductImage, ProductVariant
+from apps.users.models import User, UserRole
 
 # Photographies Unsplash vérifiées (licence libre) — mêmes clichés que la maquette
 # frontend, pour une identité visuelle cohérente une fois le catalogue branché sur l'API.
@@ -264,6 +265,29 @@ class Command(BaseCommand):
                         )
 
         self.stdout.write(self.style.SUCCESS(f"{len(PRODUCTS)} produit(s) synchronisé(s), {created_count} créé(s)."))
+
+        # Rattache tout produit sans vendeur (ce jeu de données de démo, ou une
+        # fiche créée avant l'introduction du role vendeur) au compte
+        # admin/vendeur principal. Tourne après le bootstrap du superuser dans
+        # le build Render (voir render.yaml) : ce compte existe donc déjà à ce
+        # stade, sauf si les variables DJANGO_SUPERUSER_* n'ont jamais été
+        # renseignées — dans ce cas on l'indique clairement plutôt que de
+        # planter le déploiement.
+        admin_user = User.objects.filter(role=UserRole.ADMIN).order_by("date_joined").first()
+        if admin_user is None:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Aucun compte admin trouvé : les produits sans vendeur restent non attribués."
+                )
+            )
+        else:
+            orphaned = Product.objects.filter(vendor__isnull=True)
+            orphaned_count = orphaned.count()
+            if orphaned_count:
+                orphaned.update(vendor=admin_user)
+                self.stdout.write(
+                    self.style.SUCCESS(f"{orphaned_count} produit(s) rattaché(s) au vendeur {admin_user.email}.")
+                )
 
     def _attach_image(self, product, photo_id, alt, position):
         url = unsplash(photo_id)

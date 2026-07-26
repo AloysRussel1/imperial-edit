@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.text import slugify
@@ -61,6 +62,14 @@ class Category(BaseModel):
 
 class Product(BaseModel):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products")
+    # Nullable : rattaché a posteriori (voir seed_products / promotion manuelle d'un
+    # compte en vendeur) plutôt qu'exigé à la création, pour ne pas dépendre de
+    # l'ordre exact des étapes du déploiement (le compte admin/vendeur n'existe pas
+    # forcément encore au moment où cette table est peuplée). PROTECT : un vendeur
+    # ne peut pas être supprimé tant qu'il a des produits rattachés.
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="products", null=True, blank=True
+    )
     product_type = models.CharField(max_length=20, choices=ProductCategory.choices)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True)
