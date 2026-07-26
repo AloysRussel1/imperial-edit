@@ -20,6 +20,18 @@ import type {
   RegisterPayload,
 } from "@/types";
 
+// Toutes les routes de l'API Django vivent sous le préfixe `/api/`
+// (core/urls.py). Que la variable d'environnement soit saisie avec ou sans ce
+// suffixe (ex. Vercel configuré à la main avec juste le domaine Render), on le
+// garantit ici une bonne fois pour toutes plutôt que de dépendre de la
+// rigueur de chaque saisie manuelle — sans ça, tous les appels
+// (`/auth/register/`, `/products/`...) partent vers la racine du domaine au
+// lieu de `/api/...` et échouent en silence (404) en production.
+function withApiSuffix(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+}
+
 // Le navigateur (hors conteneur) doit passer par le port publié sur l'hôte ;
 // le rendu serveur Next.js (à l'intérieur du réseau Docker) doit joindre le
 // service "web" par son nom, "localhost" n'y désignant pas le backend.
@@ -27,15 +39,15 @@ import type {
 // navigateur et rendu serveur joignent tous deux la même API publique sur
 // Render — pas de réseau Docker interne) ; `NEXT_PUBLIC_API_BASE_URL` reste
 // supporté pour la config Docker locale existante. Le repli de secours pointe
-// vers le backend Render réel (avec son préfixe `/api`, requis par
-// core/urls.py) plutôt que vers localhost : si la variable Vercel est mal
-// configurée, on tape encore le bon serveur au lieu d'une adresse
+// vers le backend Render réel plutôt que vers localhost : si la variable
+// Vercel est absente, on tape encore le bon serveur au lieu d'une adresse
 // inatteignable depuis une fonction serverless.
-const PUBLIC_API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "https://imperial-backend.onrender.com/api";
-const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL ?? PUBLIC_API_BASE_URL;
+const PUBLIC_API_BASE_URL = withApiSuffix(
+  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://imperial-backend.onrender.com"
+);
+const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL
+  ? withApiSuffix(process.env.INTERNAL_API_BASE_URL)
+  : PUBLIC_API_BASE_URL;
 
 // Le plan gratuit Render met le backend en veille après une période
 // d'inactivité : le premier appel qui le réveille peut prendre plusieurs
