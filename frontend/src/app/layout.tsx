@@ -8,6 +8,16 @@ import { Header } from "@/components/layout/header";
 
 import "./globals.css";
 
+// Le layout racine englobe toutes les routes : ce réglage s'applique donc à
+// toute l'app (sauf segment enfant qui le redéfinirait explicitement).
+// Sans lui, `next build` tente de pré-rendre certaines pages statiquement et
+// va chercher des données au moment du build — sur Vercel, le backend Render
+// (plan gratuit, peut être en veille) n'est pas garanti joignable à cet
+// instant, d'où le "static page generation timeout" côté build. En forçant le
+// rendu dynamique (à la requête, jamais au build) partout, ce risque disparaît.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 const display = Playfair_Display({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
