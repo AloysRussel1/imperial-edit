@@ -85,6 +85,14 @@ DATABASES = {
 
 AUTH_USER_MODEL = "users.User"
 
+# Autorise la connexion par e-mail OU par username (ex. le compte admin
+# bootstrap via create_prod_superuser, dont le username peut différer de
+# l'e-mail) — le ModelBackend par défaut est conservé en repli.
+AUTHENTICATION_BACKENDS = [
+    "apps.users.backends.EmailOrUsernameModelBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

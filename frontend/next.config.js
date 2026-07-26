@@ -8,6 +8,7 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "plus.unsplash.com" },
       { protocol: "https", hostname: "images.pexels.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
       // Backend Django : "localhost" pour les requêtes émises par le navigateur,
       // "web" pour celles émises côté serveur à l'intérieur du réseau Docker.
       { protocol: "http", hostname: "localhost", port: "8000" },
