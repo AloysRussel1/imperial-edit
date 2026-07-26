@@ -1,6 +1,15 @@
-# Blueprint Render — back-office Imperial Collection (Django REST + PostgreSQL + Redis + Celery).
+# Blueprint Render — back-office Imperial Collection (Django REST + PostgreSQL + Redis).
 # Le frontend Next.js n'apparaît pas ici : il est déployé séparément sur Vercel
 # (voir /frontend/.env.example pour les variables à y renseigner).
+#
+# Plan gratuit Render : pas de "background worker" séparé possible (Celery
+# worker/beat retirés de ce Blueprint). Les tâches (envoi d'e-mails,
+# notifications WhatsApp) s'exécutent donc de façon SYNCHRONE, dans le même
+# processus que la requête qui les déclenche — voir CELERY_TASK_ALWAYS_EAGER
+# ci-dessous et core/settings/production.py. Conséquence acceptée : les tâches
+# planifiées (expiration des réservations de stock, désactivation des coupons)
+# ne tournent plus en tâche de fond ; à réintroduire via un vrai worker Celery
+# (ou un Render Cron Job) si vous passez sur un plan payant.
 #
 # Déploiement : sur render.com, "New" → "Blueprint", pointer sur ce dépôt.
 # Toute variable marquée `sync: false` doit être saisie manuellement dans le
@@ -13,7 +22,7 @@ databases:
     user: imperial_collection
 
 services:
-  # ---- Redis (broker Celery + backend de résultats) ----
+  # ---- Redis (cache / usage futur — Celery en mode "eager" ne s'y connecte plus) ----
   - type: redis
     name: imperial-redis
     plan: free
@@ -28,7 +37,7 @@ services:
     buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate"
     startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
     autoDeploy: true
-    envVars: &backend-env
+    envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings.production
       - key: DJANGO_SECRET_KEY
@@ -62,6 +71,11 @@ services:
           type: redis
           name: imperial-redis
           property: connectionString
+      # Pas de worker Celery séparé sur le plan gratuit : les tâches s'exécutent
+      # en synchrone dans le processus web (voir settings/production.py). Repasser
+      # à "False" seulement si un vrai worker est ajouté (plan payant).
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
       # ---- Stockage média (Cloudinary) ----
       - key: MEDIA_STORAGE_BACKEND
         value: cloudinary
@@ -103,26 +117,3 @@ services:
       # ---- Suivi d'erreurs (optionnel) ----
       - key: SENTRY_DSN
         sync: false
-
-  # ---- Worker Celery (envoi d'e-mails, notifications WhatsApp, mises à jour de statut) ----
-  - type: worker
-    name: imperial-celery-worker
-    runtime: python
-    plan: free
-    rootDir: backend
-    buildCommand: "pip install -r requirements/production.txt"
-    startCommand: "celery -A core worker -l info"
-    autoDeploy: true
-    envVars: *backend-env
-
-  # ---- Celery Beat (planificateur des tâches périodiques : expiration des
-  # réservations de stock, désactivation des coupons expirés) ----
-  - type: worker
-    name: imperial-celery-beat
-    runtime: python
-    plan: free
-    rootDir: backend
-    buildCommand: "pip install -r requirements/production.txt"
-    startCommand: "celery -A core beat -l info"
-    autoDeploy: true
-    envVars: *backend-env
