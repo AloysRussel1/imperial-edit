@@ -16,7 +16,7 @@ export function Header() {
   const { t } = useTranslation();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-2 md:hidden">
           <MobileNav />

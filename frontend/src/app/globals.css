@@ -5,12 +5,18 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
+    /* `clip` (pas `hidden`) : `overflow-x: hidden` seul force le navigateur à
+       calculer `overflow-y: auto` sur cet élément (spec CSS Overflow), ce qui
+       transforme html/body en conteneurs de défilement indépendants et casse
+       le `position: sticky` du Header (il se met à défiler avec la page au
+       lieu de rester fixé en haut). `clip` bloque le débordement horizontal
+       sans créer ce contexte de défilement. */
+    overflow-x: clip;
   }
 
   body {
     font-feature-settings: "liga" 1, "kern" 1;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   ::selection {
