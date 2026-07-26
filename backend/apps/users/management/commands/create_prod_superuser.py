@@ -3,6 +3,8 @@ import os
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
+from apps.users.models import UserRole
+
 
 class Command(BaseCommand):
     """
@@ -57,6 +59,12 @@ class Command(BaseCommand):
             existing.is_active = True
             existing.is_staff = True
             existing.is_superuser = True
+            # `create_superuser()`/is_staff ne suffisent qu'a l'admin Django lui-meme :
+            # le tableau de bord "Espace vendeur" du frontend verifie le champ
+            # metier `role` (defaut "customer"), pas is_staff/is_superuser. Sans ce
+            # champ force a ADMIN, ce compte se connecterait a /admin/ mais serait
+            # rejete de l'espace vendeur cote frontend.
+            existing.role = UserRole.ADMIN
             existing.set_password(password)
             existing.save()
             # Jamais le mot de passe en clair dans les logs (persistes par Render) :
@@ -70,5 +78,6 @@ class Command(BaseCommand):
             password=password,
             first_name=first_name,
             last_name=last_name,
+            role=UserRole.ADMIN,
         )
         self.stdout.write(self.style.SUCCESS(f"Superuser {email} cree avec succes."))
