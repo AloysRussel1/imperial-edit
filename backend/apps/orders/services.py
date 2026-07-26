@@ -12,10 +12,23 @@ from django.utils import timezone
 from apps.products.models import ProductVariant
 from apps.products.services import release_stock, reserve_stock
 
-from apps.notifications.tasks import send_order_deposit_notification
+from apps.notifications.tasks import send_order_deposit_notification, send_order_status_update_notification
 
 from .models import Order, OrderItem, OrderStatus, OrderStatusHistory
 from .tasks import notify_deposit_paid
+
+# Le dépôt d'acompte a son propre e-mail dédié (`notify_order_deposit_paid`,
+# déclenché depuis `register_payment`) ; "pending_deposit" et "cancelled" ne
+# sont pas des jalons du parcours logistique — seules ces 4 étapes déclenchent
+# l'e-mail générique de mise à jour de statut.
+_STATUS_UPDATE_NOTIFY_STATUSES = frozenset(
+    {
+        OrderStatus.SOURCING_IN_PROGRESS,
+        OrderStatus.SHIPPED_FROM_EUROPE,
+        OrderStatus.ARRIVED_IN_CAMEROON,
+        OrderStatus.DELIVERED_AND_COMPLETED,
+    }
+)
 
 _TRACKING_CODE_ALPHABET = string.ascii_uppercase + string.digits
 
@@ -45,6 +58,8 @@ def record_status_change(order: Order, status: str, *, note: str = "", changed_b
         order.carrier_notes = note
     order.save(update_fields=["status", "carrier_notes", "updated_at"] if note else ["status", "updated_at"])
     OrderStatusHistory.objects.create(order=order, status=status, note=note, changed_by=changed_by)
+    if status in _STATUS_UPDATE_NOTIFY_STATUSES:
+        send_order_status_update_notification.delay(str(order.id), status)
     return order
 
 

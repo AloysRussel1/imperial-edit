@@ -1,0 +1,15 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Bienvenue chez Imperial Collection{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 16px;font-size:22px;font-weight:600;color:#F7F4EE;">Bienvenue, {{ first_name }}</h1>
+<p style="margin:0 0 20px;">
+  Votre compte Imperial Collection est prêt. Découvrez notre sélection de pièces d&apos;exception,
+  sourcées à Paris, Milan et Londres, et acheminées avec soin jusqu&apos;à vous au Cameroun.
+</p>
+<p style="text-align:center;margin:32px 0 8px;">
+  <a href="{{ site_url }}/products"
+     style="display:inline-block;padding:14px 28px;background-color:#C9A24B;background-image:linear-gradient(135deg,#E4C87A 0%,#C9A24B 45%,#8A6A3F 100%);color:#0B0B0C;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+    Découvrir la collection
+  </a>
+</p>
+{% endblock %}

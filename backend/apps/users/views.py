@@ -29,7 +29,7 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
-        send_welcome_email.delay(user.email)
+        send_welcome_email.delay(user.email, user.first_name)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, Truck } from "lucide-react";
+import { Loader2, MessageCircle, Truck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,30 @@ import { Price } from "@/components/common/price";
 import { useTranslation } from "@/hooks/use-translation";
 import { advanceOrderStatus, settleOrderBalance } from "@/lib/api";
 import { getOrderStatusMeta, ORDER_STATUS_META, ORDER_STATUS_OPTIONS } from "@/lib/order-status";
+import { buildOrderWhatsAppMessage, buildWhatsAppUrl } from "@/lib/utils";
 import type { ApiOrder, ApiOrderStatus } from "@/types";
+
+/** Bouton "Avertir sur WhatsApp" : lien pré-rempli, silencieusement absent si le client n'a pas de numéro renseigné. */
+function WhatsAppNotifyButton({ order }: { order: ApiOrder }) {
+  if (!order.customer_whatsapp) return null;
+
+  function handleClick() {
+    const trackingUrl = `${window.location.origin}/tracking/${order.tracking_number ?? order.order_number}`;
+    const message = buildOrderWhatsAppMessage(order, trackingUrl);
+    window.open(buildWhatsAppUrl(order.customer_whatsapp, message), "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="inline-flex items-center gap-1.5 rounded-md border border-[#25D366]/40 px-2 py-1 text-xs font-medium text-[#128C7E] transition-colors hover:bg-[#25D366]/10"
+    >
+      <MessageCircle className="h-3.5 w-3.5" />
+      Avertir sur WhatsApp
+    </button>
+  );
+}
 
 interface AdminOrdersTableProps {
   orders: ApiOrder[];
@@ -200,7 +223,8 @@ export function AdminOrdersTable({ orders, onChanged }: AdminOrdersTableProps) {
               </span>
             </div>
             <AdvanceStatusDialog order={order} busy={busyId === order.id} onAdvance={handleAdvance} />
-            <div className="flex justify-end border-t border-imperial-black/10 pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-imperial-black/10 pt-3">
+              <WhatsAppNotifyButton order={order} />
               <BalanceAction order={order} busy={busyId === order.id} onSettle={handleSettle} />
             </div>
           </div>
@@ -246,7 +270,10 @@ export function AdminOrdersTable({ orders, onChanged }: AdminOrdersTableProps) {
                   <AdvanceStatusDialog order={order} busy={busyId === order.id} onAdvance={handleAdvance} />
                 </td>
                 <td className="px-4 py-3">
-                  <BalanceAction order={order} busy={busyId === order.id} onSettle={handleSettle} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <BalanceAction order={order} busy={busyId === order.id} onSettle={handleSettle} />
+                    <WhatsAppNotifyButton order={order} />
+                  </div>
                 </td>
               </tr>
             ))}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>{% block title %}Imperial Collection{% endblock %}</title>
+<style>
+  body, table, td { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  body { margin: 0; padding: 0; }
+  a { color: #C9A24B; }
+  @media (max-width: 480px) {
+    .ie-card { border-radius: 0 !important; }
+    .ie-padded { padding: 24px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#0B0B0C;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0B0C;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="ie-card" style="max-width:560px;background-color:#161514;background-image:linear-gradient(160deg,#211F1D 0%,#0B0B0C 100%);border:1px solid rgba(201,162,75,0.25);border-radius:16px;overflow:hidden;">
+          <tr>
+            <td class="ie-padded" style="padding:32px 32px 24px 32px;text-align:center;border-bottom:1px solid rgba(247,244,238,0.08);">
+              <p style="margin:0;letter-spacing:4px;text-transform:uppercase;font-size:11px;color:#C9A24B;">Imperial Collection</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="ie-padded" style="padding:32px;color:#F7F4EE;font-size:15px;line-height:1.6;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ie-padded" style="padding:20px 32px;border-top:1px solid rgba(247,244,238,0.08);text-align:center;">
+              <p style="margin:0;font-size:11px;color:rgba(247,244,238,0.4);">© {{ year }} Imperial Collection — Paris, France.</p>
+              <p style="margin:6px 0 0;font-size:11px;color:rgba(247,244,238,0.3);">Sourcing &amp; mode de luxe, France ↔ Cameroun.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

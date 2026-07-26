@@ -1,0 +1,28 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Votre devis de sourcing est prêt{% endblock %}
+{% block content %}
+<p style="margin:0 0 4px;text-transform:uppercase;letter-spacing:2px;font-size:11px;color:#C9A24B;">Sourcing sur photo</p>
+<h1 style="margin:0 0 16px;font-size:22px;font-weight:600;">Votre devis est prêt</h1>
+<p style="margin:0 0 20px;">Bonjour {{ first_name }}, bonne nouvelle : nous avons localisé « {{ article }} ».</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(201,162,75,0.08);border-radius:10px;margin:0 0 20px;">
+  <tr>
+    <td style="padding:18px 20px;">
+      <p style="margin:0;font-size:13px;color:rgba(247,244,238,0.6);">Prix trouvé en Europe</p>
+      <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:#C9A24B;">{{ quoted_price }}</p>
+    </td>
+  </tr>
+</table>
+{% if admin_notes %}
+<p style="margin:0 0 20px;font-size:14px;color:rgba(247,244,238,0.7);">{{ admin_notes }}</p>
+{% endif %}
+<p style="margin:0 0 24px;">
+  Connectez-vous à votre espace client pour valider la commande et régler l&apos;acompte (50% ou 70%
+  selon l&apos;article).
+</p>
+<p style="text-align:center;margin:0;">
+  <a href="{{ site_url }}/dashboard"
+     style="display:inline-block;padding:14px 28px;background-color:#C9A24B;background-image:linear-gradient(135deg,#E4C87A 0%,#C9A24B 45%,#8A6A3F 100%);color:#0B0B0C;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+    Valider ma commande
+  </a>
+</p>
+{% endblock %}

@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 import { EUR_XAF_RATE } from "@/lib/constants";
-import type { Currency } from "@/types";
+import type { ApiOrder, ApiSourcingRequest, Currency } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,9 +21,53 @@ export function formatPrice(amountXaf: number, currency: Currency = "XAF"): stri
   return `${Math.round(amountXaf).toLocaleString("fr-FR")} FCFA`;
 }
 
-export function buildWhatsAppLink(phoneNumber: string, orderNumber: string, status: string): string {
-  const message = encodeURIComponent(
-    `Bonjour, concernant votre commande ${orderNumber} (statut: ${status}) chez The Imperial Collection.`
-  );
-  return `https://wa.me/${phoneNumber}?text=${message}`;
+/** Même formulation que les e-mails automatiques (`notify_order_status_update` côté backend), pour rester cohérent quel que soit le canal. */
+function orderStatusMessageFragment(order: ApiOrder): string {
+  switch (order.status) {
+    case "deposit_paid":
+      return "votre acompte a bien été reçu et votre commande est validée";
+    case "sourcing_in_progress":
+      return "nous finalisons actuellement l'achat de votre pièce en Europe";
+    case "shipped_from_europe":
+      return "votre colis a quitté l'Europe et est en cours d'acheminement";
+    case "arrived_in_cameroon":
+      return `votre colis est bien arrivé en agence à ${order.delivery_city}`;
+    case "delivered_and_completed":
+      return "votre commande a été livrée et soldée — merci de votre confiance";
+    default:
+      return `votre commande ${order.order_number} a été mise à jour`;
+  }
+}
+
+/** Message WhatsApp pré-rempli pour le bouton "Avertir sur WhatsApp" du dashboard admin. */
+export function buildOrderWhatsAppMessage(order: ApiOrder, trackingUrl: string): string {
+  const firstName = order.customer_name.split(" ")[0] || order.customer_name;
+  const remaining = Number(order.amount_remaining_xaf);
+  const parts = [`Bonjour ${firstName}, ${orderStatusMessageFragment(order)}.`];
+  if (remaining > 0) {
+    parts.push(`Le solde restant est de ${formatXAF(remaining)}.`);
+  }
+  parts.push(`Voici votre lien de suivi : ${trackingUrl}`);
+  return parts.join(" ");
+}
+
+export function buildSourcingWhatsAppMessage(request: ApiSourcingRequest): string {
+  const firstName = request.customer_name.split(" ")[0] || request.customer_name;
+  const article = request.product_name || "l'article recherché";
+  const parts = [`Bonjour ${firstName},`];
+  if (request.quoted_price_xaf) {
+    parts.push(
+      `bonne nouvelle : nous avons trouvé « ${article} » au prix de ${formatXAF(Number(request.quoted_price_xaf))}.`,
+      "Connectez-vous à votre espace client pour valider la commande et régler l'acompte."
+    );
+  } else {
+    parts.push(`nous revenons vers vous au sujet de votre demande de sourcing pour « ${article} ».`);
+  }
+  return parts.join(" ");
+}
+
+/** `phoneNumber` peut contenir des espaces/indicatif avec "+" — seuls les chiffres sont conservés, comme l'exige l'API `wa.me`. */
+export function buildWhatsAppUrl(phoneNumber: string, message: string): string {
+  const digits = phoneNumber.replace(/\D/g, "");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,29 @@ import { Price } from "@/components/common/price";
 import { useTranslation } from "@/hooks/use-translation";
 import { quoteSourcingRequest, rejectSourcingRequest } from "@/lib/api";
 import { ADMIN_SOURCING_STATUS_META } from "@/lib/order-status";
+import { buildSourcingWhatsAppMessage, buildWhatsAppUrl } from "@/lib/utils";
 import type { ApiSourcingRequest } from "@/types";
+
+/** Bouton "Avertir sur WhatsApp" : silencieusement absent si le client n'a pas de numéro renseigné. */
+function WhatsAppNotifyButton({ request }: { request: ApiSourcingRequest }) {
+  if (!request.customer_whatsapp) return null;
+
+  function handleClick() {
+    const url = buildWhatsAppUrl(request.customer_whatsapp, buildSourcingWhatsAppMessage(request));
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="inline-flex items-center gap-1.5 rounded-md border border-[#25D366]/40 px-2 py-1 text-xs font-medium text-[#128C7E] transition-colors hover:bg-[#25D366]/10"
+    >
+      <MessageCircle className="h-3.5 w-3.5" />
+      Avertir sur WhatsApp
+    </button>
+  );
+}
 
 interface SourcingRowProps {
   request: ApiSourcingRequest;
@@ -74,7 +96,10 @@ function SourcingRow({ request, onChanged }: SourcingRowProps) {
               {request.size_or_shoe ? ` · ${request.size_or_shoe}` : ""}
             </p>
           </div>
-          <Badge variant={statusMeta.variant}>{t(statusMeta.labelKey)}</Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant={statusMeta.variant}>{t(statusMeta.labelKey)}</Badge>
+            <WhatsAppNotifyButton request={request} />
+          </div>
         </div>
 
         <p className="text-sm text-imperial-black/65">{request.description}</p>

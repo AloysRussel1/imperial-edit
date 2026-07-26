@@ -164,13 +164,18 @@ WHATSAPP_ACCESS_TOKEN = env("WHATSAPP_ACCESS_TOKEN", default="")
 WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
 
 # ==== E-mail transactionnel ====
+# Backend SMTP générique — compatible tel quel avec un relais SMTP Resend ou
+# Brevo (il suffit de renseigner leurs identifiants SMTP respectifs dans
+# EMAIL_HOST / EMAIL_HOST_USER / EMAIL_HOST_PASSWORD), sans changer de code.
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = env("EMAIL_HOST", default="")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="The Imperial Collection <no-reply@imperialedit.com>")
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL", default="Imperial Collection <notifications@imperialcollection.com>"
+)
 
 # ==== Frontend (liens embarqués dans les e-mails transactionnels) ====
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")

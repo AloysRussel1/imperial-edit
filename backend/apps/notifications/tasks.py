@@ -19,3 +19,13 @@ def send_sourcing_quote_notification(sourcing_request_id: str) -> None:
 
     sourcing_request = SourcingRequest.objects.select_related("customer").get(id=sourcing_request_id)
     notify_sourcing_quote_sent(sourcing_request)
+
+
+@shared_task
+def send_order_status_update_notification(order_id: str, status: str) -> None:
+    from apps.orders.models import Order
+
+    from .services import notify_order_status_update
+
+    order = Order.objects.select_related("customer").get(id=order_id)
+    notify_order_status_update(order, status)
