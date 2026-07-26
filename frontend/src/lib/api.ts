@@ -96,7 +96,16 @@ apiClient.interceptors.response.use(
       | (InternalAxiosRequestConfig & { _retried?: boolean; _retryCount?: number })
       | undefined;
 
-    if (original && isColdStartError(error)) {
+    // Uniquement les requêtes idempotentes (GET) : rejouer un POST (connexion,
+    // inscription, soumission de sourcing, checkout...) après un simple
+    // timeout risquerait de le déclencher une seconde fois côté serveur si la
+    // première tentative avait en réalité fini par aboutir (réponse perdue en
+    // route plutôt que requête jamais traitée) — double compte, double
+    // demande de sourcing, etc. Pour ces appels, on préfère laisser l'erreur
+    // remonter telle quelle au formulaire (qui l'affiche déjà proprement).
+    const isIdempotent = (original?.method ?? "get").toLowerCase() === "get";
+
+    if (original && isIdempotent && isColdStartError(error)) {
       original._retryCount = (original._retryCount ?? 0) + 1;
       if (original._retryCount <= MAX_COLD_START_RETRIES) {
         await wait(RETRY_DELAY_MS);
