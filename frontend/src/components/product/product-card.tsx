@@ -32,7 +32,11 @@ export function ProductCard({ product }: ProductCardProps) {
       href={`/products/${product.slug}`}
       className="group flex flex-col overflow-hidden rounded-lg border border-imperial-black/10 bg-white transition-shadow hover:shadow-elevated"
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-imperial-ivory">
+      {/* Ratio plus court sur mobile (grille en 1 colonne, carte pleine largeur :
+          un ratio 4/5 y produit une image très haute qui ralentit le défilement) ;
+          on retrouve le ratio portrait plus luxueux dès sm: (grille en 2+ colonnes,
+          cartes plus étroites). */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-imperial-ivory sm:aspect-[4/5]">
         {cover && !imageFailed ? (
           <Image
             src={cover.url}
@@ -58,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.is_featured ? <Badge variant="gold">Sélection Impériale</Badge> : null}
         </div>
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-4">
+      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
         <p className="text-xs uppercase tracking-wide text-imperial-black/45">
           {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
         </p>
