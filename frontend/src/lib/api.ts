@@ -189,19 +189,15 @@ function mapApiProduct(product: ApiProduct): ProductDetail {
   };
 }
 
+/**
+ * Catalogue complet côté client public (produits actifs uniquement) ; côté
+ * admin authentifié, le backend renvoie aussi les fiches inactives (voir
+ * ProductViewSet.get_queryset) — même endpoint pour la vitrine et le
+ * panneau catalogue du tableau de bord de synthèse, pas de route dédiée.
+ */
 export async function fetchProducts(): Promise<ProductDetail[]> {
   const { data } = await apiClient.get<{ results: ApiProduct[] }>("/products/");
   return data.results.map(mapApiProduct);
-}
-
-/**
- * Catalogue à gérer pour l'utilisateur connecté : ses propres fiches pour un
- * vendeur, le catalogue complet pour un admin. Requiert le rôle admin ou
- * vendor côté backend (403 sinon).
- */
-export async function fetchMyProducts(): Promise<ProductDetail[]> {
-  const { data } = await apiClient.get<ApiProduct[]>("/products/my-products/");
-  return data.map(mapApiProduct);
 }
 
 export async function fetchProductBySlug(slug: string): Promise<ProductDetail | null> {

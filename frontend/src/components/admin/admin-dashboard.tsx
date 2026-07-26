@@ -6,13 +6,14 @@ import { Banknote, Loader2, PackageSearch, RefreshCw, ShieldAlert, ShoppingBag, 
 
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/common/price";
+import { AdminCatalogPanel } from "@/components/admin/admin-catalog-panel";
 import { AdminOrdersTable } from "@/components/admin/admin-orders-table";
 import { AdminSourcingPanel } from "@/components/admin/admin-sourcing-panel";
 import { useTranslation } from "@/hooks/use-translation";
-import { fetchAdminSummary, fetchAllOrders, fetchAllSourcingRequests } from "@/lib/api";
+import { fetchAdminSummary, fetchAllOrders, fetchAllSourcingRequests, fetchProducts } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
-import type { AdminDashboardSummary, ApiOrder, ApiSourcingRequest } from "@/types";
+import type { AdminDashboardSummary, ApiOrder, ApiSourcingRequest, ProductDetail } from "@/types";
 
 /** Figure d'en-tête (hero figure) : un seul chiffre par vue, en police sans-serif — jamais la display/serif du reste du site. */
 function HeroFigure({
@@ -70,6 +71,7 @@ export function AdminDashboard() {
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [requests, setRequests] = useState<ApiSourcingRequest[]>([]);
+  const [products, setProducts] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,14 +80,16 @@ export function AdminDashboard() {
     setError(null);
     setRefreshing(true);
     try {
-      const [summaryData, ordersData, requestsData] = await Promise.all([
+      const [summaryData, ordersData, requestsData, productsData] = await Promise.all([
         fetchAdminSummary(),
         fetchAllOrders(),
         fetchAllSourcingRequests(),
+        fetchProducts(),
       ]);
       setSummary(summaryData);
       setOrders(ordersData);
       setRequests(requestsData);
+      setProducts(productsData);
     } catch {
       setError(t("admin.loadError"));
     } finally {
@@ -188,6 +192,10 @@ export function AdminDashboard() {
 
       <section>
         <AdminSourcingPanel requests={requests} onChanged={loadAll} />
+      </section>
+
+      <section>
+        <AdminCatalogPanel products={products} />
       </section>
     </div>
   );

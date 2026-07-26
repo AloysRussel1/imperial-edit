@@ -27,7 +27,12 @@ export function LoginForm() {
     setLoading(true);
     try {
       await login({ email, password });
-      const redirectTo = searchParams.get("next") ?? "/dashboard";
+      // Sans destination explicite, un compte admin est envoyé directement sur
+      // le tableau de bord de synthèse (KPIs, commandes, sourcing, catalogue)
+      // plutôt que sur l'espace "mes commandes" pensé pour un client.
+      const role = useAuthStore.getState().user?.role;
+      const defaultRedirect = role === "admin" ? "/admin-dashboard" : "/dashboard";
+      const redirectTo = searchParams.get("next") ?? defaultRedirect;
       router.push(redirectTo);
     } catch {
       setError("Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe.");
