@@ -26,13 +26,26 @@ import type {
 // `NEXT_PUBLIC_API_URL` est le nom canonique (utilisé sur Vercel, où
 // navigateur et rendu serveur joignent tous deux la même API publique sur
 // Render — pas de réseau Docker interne) ; `NEXT_PUBLIC_API_BASE_URL` reste
-// supporté pour la config Docker locale existante.
+// supporté pour la config Docker locale existante. Le repli de secours pointe
+// vers le backend Render réel (avec son préfixe `/api`, requis par
+// core/urls.py) plutôt que vers localhost : si la variable Vercel est mal
+// configurée, on tape encore le bon serveur au lieu d'une adresse
+// inatteignable depuis une fonction serverless.
 const PUBLIC_API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
+  process.env.NEXT_PUBLIC_API_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "https://imperial-backend.onrender.com/api";
 const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL ?? PUBLIC_API_BASE_URL;
+
+// Le plan gratuit Render met le backend en veille après une période
+// d'inactivité : le premier appel qui le réveille peut prendre plusieurs
+// secondes avant de répondre. 20s laisse large la marge pour ce cold start
+// sans pour autant bloquer indéfiniment une requête réellement en échec.
+const REQUEST_TIMEOUT_MS = 20_000;
 
 export const apiClient = axios.create({
   baseURL: typeof window === "undefined" ? INTERNAL_API_BASE_URL : PUBLIC_API_BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 // Pas de Content-Type par défaut : axios détecte automatiquement JSON (objet)
 // vs multipart/form-data (FormData, pour l'upload de photo) requête par requête.
@@ -62,10 +75,35 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
+// Nombre de nouvelles tentatives pour une requête qui échoue par timeout /
+// erreur réseau / 504 — signature typique d'un backend Render encore en train
+// de se réveiller (cold start), pas d'une erreur métier à ne pas répéter.
+const MAX_COLD_START_RETRIES = 2;
+const RETRY_DELAY_MS = 1500;
+
+function isColdStartError(error: AxiosError): boolean {
+  return error.code === "ECONNABORTED" || error.response?.status === 504 || !error.response;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const original = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
+    const original = error.config as
+      | (InternalAxiosRequestConfig & { _retried?: boolean; _retryCount?: number })
+      | undefined;
+
+    if (original && isColdStartError(error)) {
+      original._retryCount = (original._retryCount ?? 0) + 1;
+      if (original._retryCount <= MAX_COLD_START_RETRIES) {
+        await wait(RETRY_DELAY_MS);
+        return apiClient(original);
+      }
+    }
+
     if (error.response?.status === 401 && original && !original._retried && useAuthStore.getState().refreshToken) {
       original._retried = true;
       refreshPromise ??= refreshAccessToken();
