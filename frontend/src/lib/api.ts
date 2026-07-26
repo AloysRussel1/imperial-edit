@@ -39,11 +39,14 @@ function withApiSuffix(url: string): string {
 // navigateur et rendu serveur joignent tous deux la même API publique sur
 // Render — pas de réseau Docker interne) ; `NEXT_PUBLIC_API_BASE_URL` reste
 // supporté pour la config Docker locale existante. Le repli de secours pointe
-// vers le backend Render réel plutôt que vers localhost : si la variable
-// Vercel est absente, on tape encore le bon serveur au lieu d'une adresse
-// inatteignable depuis une fonction serverless.
+// vers le backend Render réel (avec son suffixe d'instance exact, attribué
+// par Render — pas juste "imperial-backend.onrender.com") plutôt que vers
+// localhost : si la variable Vercel est absente, on tape encore le bon
+// serveur au lieu d'une adresse inatteignable depuis une fonction serverless.
 const PUBLIC_API_BASE_URL = withApiSuffix(
-  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://imperial-backend.onrender.com"
+  process.env.NEXT_PUBLIC_API_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://imperial-backend-iwu8.onrender.com"
 );
 const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL
   ? withApiSuffix(process.env.INTERNAL_API_BASE_URL)

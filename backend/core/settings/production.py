@@ -42,10 +42,20 @@ CELERY_TASK_EAGER_PROPAGATES = True
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ==== Hébergement Render : domaines `*.onrender.com` ====
-# Render fournit automatiquement RENDER_EXTERNAL_HOSTNAME (le sous-domaine
-# exact attribué au service) à l'exécution — on l'ajoute en plus du wildcard
-# générique pour couvrir aussi bien la valeur exacte que les redirections.
-ALLOWED_HOSTS = [*ALLOWED_HOSTS, ".onrender.com"]
+# Render attribue parfois un suffixe d'instance au sous-domaine du service
+# (ex. "imperial-backend-iwu8.onrender.com" plutôt que
+# "imperial-backend.onrender.com") — potentiellement différent à chaque
+# nouvelle instance. RENDER_EXTERNAL_HOSTNAME (fourni automatiquement par
+# Render à l'exécution) couvre déjà la valeur exacte quelle qu'elle soit ; le
+# wildcard ".onrender.com" couvre tout sous-domaine par construction. Les
+# deux valeurs connues sont listées explicitement en plus, en pure défense en
+# profondeur si l'un de ces deux mécanismes venait à changer.
+ALLOWED_HOSTS = [
+    *ALLOWED_HOSTS,
+    ".onrender.com",
+    "imperial-backend-iwu8.onrender.com",
+    "imperial-backend.onrender.com",
+]
 render_external_hostname = env("RENDER_EXTERNAL_HOSTNAME", default="")
 if render_external_hostname:
     ALLOWED_HOSTS.append(render_external_hostname)
@@ -60,9 +70,14 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Django exige que CSRF_TRUSTED_ORIGINS liste des schémas complets (avec
-# wildcard de sous-domaine supporté nativement depuis Django 4).
+# wildcard de sous-domaine supporté nativement depuis Django 4). Les origines
+# Render elles-mêmes sont incluses pour couvrir la connexion à l'admin Django
+# directement sur son domaine (formulaire de login, authentification par
+# session — sans lien avec l'API JWT du frontend).
 CSRF_TRUSTED_ORIGINS = [
     "https://*.vercel.app",
+    "https://imperial-backend-iwu8.onrender.com",
+    "https://imperial-backend.onrender.com",
     *[origin for origin in CORS_ALLOWED_ORIGINS if origin.startswith("https://")],
 ]
 
