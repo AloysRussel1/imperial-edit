@@ -214,6 +214,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Ne télécharge pas les photos (plus rapide, utile hors-ligne).",
         )
+        parser.add_argument(
+            "--force-images",
+            action="store_true",
+            help=(
+                "Supprime les photos déjà attachées et les retélécharge/réuploade "
+                "toutes, même pour un produit qui en a déjà (ex. remédiation après "
+                "un upload Cloudinary raté sous d'anciens identifiants)."
+            ),
+        )
 
     def handle(self, *args, **options):
         rate = Decimal(str(settings.EUR_XAF_RATE))
@@ -224,6 +233,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"{len(categories)} catégorie(s) prête(s)."))
 
         created_count = 0
+        images_attempted = 0
+        images_failed = 0
         with transaction.atomic():
             for data in PRODUCTS:
                 base_price_xaf = (data["price_eur"] * rate).quantize(Decimal("1"))
@@ -250,9 +261,22 @@ class Command(BaseCommand):
                 if created:
                     created_count += 1
 
-                if not options["skip_images"] and not product.images.exists():
+                if not options["skip_images"]:
+                    if options["force_images"]:
+                        product.images.all().delete()
+                        existing_positions = set()
+                    else:
+                        # Ne retélécharge que les positions manquantes (pas tout
+                        # le produit) : un échec Cloudinary partiel ne doit pas
+                        # empêcher de compléter les photos déjà réussies, ni
+                        # forcer un nouvel upload de ce qui fonctionne déjà.
+                        existing_positions = set(product.images.values_list("position", flat=True))
                     for position, (photo_id, alt) in enumerate(data["images"]):
-                        self._attach_image(product, photo_id, alt, position)
+                        if position in existing_positions:
+                            continue
+                        images_attempted += 1
+                        if not self._attach_image(product, photo_id, alt, position):
+                            images_failed += 1
 
                 if not product.variants.exists():
                     for size, color, stock in data["variants"]:
@@ -265,6 +289,14 @@ class Command(BaseCommand):
                         )
 
         self.stdout.write(self.style.SUCCESS(f"{len(PRODUCTS)} produit(s) synchronisé(s), {created_count} créé(s)."))
+        if images_attempted:
+            style = self.style.SUCCESS if images_failed == 0 else self.style.ERROR
+            self.stdout.write(
+                style(
+                    f"Photos : {images_attempted - images_failed}/{images_attempted} uploadées avec succès"
+                    + (f", {images_failed} échec(s) — vérifier MEDIA_STORAGE_BACKEND/CLOUDINARY_*." if images_failed else ".")
+                )
+            )
 
         # Rattache tout produit sans vendeur (ce jeu de données de démo, ou une
         # fiche créée avant l'introduction du role vendeur) au compte
@@ -289,14 +321,14 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f"{orphaned_count} produit(s) rattaché(s) au vendeur {admin_user.email}.")
                 )
 
-    def _attach_image(self, product, photo_id, alt, position):
+    def _attach_image(self, product, photo_id, alt, position) -> bool:
         url = unsplash(photo_id)
         try:
             response = requests.get(url, timeout=15)
             response.raise_for_status()
         except requests.RequestException as exc:
             self.stderr.write(self.style.WARNING(f"Échec téléchargement {url} pour {product.slug}: {exc}"))
-            return
+            return False
         # `image.image.save()` ne se contente pas d'écrire un enregistrement :
         # il déclenche l'upload réel vers Cloudinary (MEDIA_STORAGE_BACKEND).
         # Des identifiants Cloudinary absents/invalides sur Render lèvent ici
@@ -310,3 +342,5 @@ class Command(BaseCommand):
             image.save()
         except Exception as exc:  # noqa: BLE001 - dépend de la lib Cloudinary, pas d'un type précis
             self.stderr.write(self.style.WARNING(f"Échec upload image pour {product.slug}: {exc}"))
+            return False
+        return True
