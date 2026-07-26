@@ -38,6 +38,12 @@ services:
     startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
     autoDeploy: true
     envVars:
+      # Render utilise Python 3.14 par défaut si non précisé — trop récent pour
+      # Pillow/psycopg2 à ces versions (échec de compilation au build). Fixé en
+      # complément de /backend/.python-version (les deux mécanismes se recoupent
+      # selon la façon dont Render détecte la version pour ce type de service).
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: DJANGO_SETTINGS_MODULE
         value: core.settings.production
       - key: DJANGO_SECRET_KEY
