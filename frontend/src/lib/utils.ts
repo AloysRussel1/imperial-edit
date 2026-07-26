@@ -39,6 +39,14 @@ function orderStatusMessageFragment(order: ApiOrder): string {
   }
 }
 
+/**
+ * Contrairement à un e-mail, un message WhatsApp n'a pas d'habillage visuel —
+ * la signature textuelle est donc le seul moyen pour le client de savoir que
+ * le message provient bien du service client officiel Imperial Collection
+ * (numéro +237 6 96 00 03 88), et pas d'un numéro personnel.
+ */
+const WHATSAPP_SIGNATURE = "— L'équipe Imperial Collection";
+
 /** Message WhatsApp pré-rempli pour le bouton "Avertir sur WhatsApp" du dashboard admin. */
 export function buildOrderWhatsAppMessage(order: ApiOrder, trackingUrl: string): string {
   const firstName = order.customer_name.split(" ")[0] || order.customer_name;
@@ -48,6 +56,7 @@ export function buildOrderWhatsAppMessage(order: ApiOrder, trackingUrl: string):
     parts.push(`Le solde restant est de ${formatXAF(remaining)}.`);
   }
   parts.push(`Voici votre lien de suivi : ${trackingUrl}`);
+  parts.push(WHATSAPP_SIGNATURE);
   return parts.join(" ");
 }
 
@@ -63,6 +72,7 @@ export function buildSourcingWhatsAppMessage(request: ApiSourcingRequest): strin
   } else {
     parts.push(`nous revenons vers vous au sujet de votre demande de sourcing pour « ${article} ».`);
   }
+  parts.push(WHATSAPP_SIGNATURE);
   return parts.join(" ");
 }
 

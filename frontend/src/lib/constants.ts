@@ -2,7 +2,8 @@ import type { ProductType, StockStatus } from "@/types";
 
 export const SITE_NAME = "The Imperial Collection";
 
-export const WHATSAPP_NUMBER = "237600000000";
+/** Numéro WhatsApp officiel du service client Imperial Collection (format international, sans "+"). */
+export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "237696000388";
 
 export const EUR_XAF_RATE = 655.957;
 
