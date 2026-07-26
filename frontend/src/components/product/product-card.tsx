@@ -21,6 +21,12 @@ export function ProductCard({ product }: ProductCardProps) {
   // sur la même vignette de repli que pour les produits sans photo du tout.
   const [imageFailed, setImageFailed] = useState(false);
 
+  // Temporaire : à retirer une fois la cause des images manquantes en
+  // production confirmée/résolue — permet d'inspecter en direct, depuis la
+  // console du navigateur sur le site déployé, la structure exacte reçue
+  // pour chaque produit (notamment `images`, vide ou non).
+  console.log("[DEBUG Product Image]", product.name, product);
+
   return (
     <Link
       href={`/products/${product.slug}`}
