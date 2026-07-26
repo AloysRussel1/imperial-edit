@@ -119,10 +119,10 @@ def send_template_email(
         )
         return False
 
-    html_body = render_to_string(f"emails/{template_name}.html", {**context, "year": timezone.now().year})
-    text_body = strip_tags(html_body)
-
+    text_body = ""
     try:
+        html_body = render_to_string(f"emails/{template_name}.html", {**context, "year": timezone.now().year})
+        text_body = strip_tags(html_body)
         email = EmailMultiAlternatives(subject=subject, body=text_body, to=[to_email])
         email.attach_alternative(html_body, "text/html")
         email.send(fail_silently=False)
