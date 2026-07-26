@@ -51,13 +51,17 @@ export function ProductGallery({ images }: ProductGalleryProps) {
             alt={active.alt}
             fill
             priority
+            unoptimized
             sizes="(min-width: 1024px) 45vw, 100vw"
             className="object-cover transition-transform duration-300 ease-out"
             style={{
               transformOrigin: zoomOrigin,
               transform: isZooming ? "scale(1.8)" : "scale(1)",
             }}
-            onError={() => setFailedIds((prev) => new Set(prev).add(active.id))}
+            onError={() => {
+              console.error("Erreur de chargement d'image pour :", active.url);
+              setFailedIds((prev) => new Set(prev).add(active.id));
+            }}
           />
         )}
       </div>
@@ -81,9 +85,13 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                   src={image.url}
                   alt={image.alt}
                   fill
+                  unoptimized
                   sizes="64px"
                   className="object-cover"
-                  onError={() => setFailedIds((prev) => new Set(prev).add(image.id))}
+                  onError={() => {
+                    console.error("Erreur de chargement d'image pour :", image.url);
+                    setFailedIds((prev) => new Set(prev).add(image.id));
+                  }}
                 />
               )}
             </button>

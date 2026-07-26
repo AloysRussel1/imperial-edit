@@ -32,9 +32,17 @@ export function ProductCard({ product }: ProductCardProps) {
             src={cover.url}
             alt={cover.alt}
             fill
+            // Cloudinary sert déjà des URLs optimisées (CDN, format, poids) :
+            // laisser l'optimiseur d'images Vercel les retraiter est redondant
+            // et ajoute un point de défaillance supplémentaire (validation de
+            // domaine, quota du plan gratuit) pour un gain nul.
+            unoptimized
             sizes="(min-width: 1280px) 22vw, (min-width: 640px) 45vw, 90vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={() => setImageFailed(true)}
+            onError={() => {
+              console.error("Erreur de chargement d'image pour :", cover.url);
+              setImageFailed(true);
+            }}
           />
         ) : (
           <PlaceholderImage hue={30} productType={product.product_type} className="absolute inset-0" />
