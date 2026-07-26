@@ -14,6 +14,12 @@
 # Déploiement : sur render.com, "New" → "Blueprint", pointer sur ce dépôt.
 # Toute variable marquée `sync: false` doit être saisie manuellement dans le
 # dashboard Render après la première création (clés/secrets non versionnés).
+#
+# `seed_products` (catégories/produits/variantes/photos de démonstration)
+# tourne à chaque build, juste après le bootstrap du superuser — commande
+# idempotente (get_or_create/update_or_create, photos re-téléchargées
+# seulement si absentes), donc sans risque de doublons ni de re-téléchargement
+# inutile sur les déploiements suivants.
 
 databases:
   - name: imperial-db
@@ -34,7 +40,7 @@ services:
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_prod_superuser"
+    buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_prod_superuser && python manage.py seed_products"
     startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
     autoDeploy: true
     envVars:
