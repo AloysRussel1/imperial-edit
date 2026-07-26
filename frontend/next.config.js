@@ -12,6 +12,9 @@ const nextConfig = {
       // "web" pour celles émises côté serveur à l'intérieur du réseau Docker.
       { protocol: "http", hostname: "localhost", port: "8000" },
       { protocol: "http", hostname: "web", port: "8000" },
+      // Backend Django en production (Render) — au cas où un média serait
+      // servi directement depuis l'API plutôt que Cloudinary.
+      { protocol: "https", hostname: "*.onrender.com" },
     ],
   },
 };

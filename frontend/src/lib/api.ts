@@ -23,7 +23,12 @@ import type {
 // Le navigateur (hors conteneur) doit passer par le port publié sur l'hôte ;
 // le rendu serveur Next.js (à l'intérieur du réseau Docker) doit joindre le
 // service "web" par son nom, "localhost" n'y désignant pas le backend.
-const PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
+// `NEXT_PUBLIC_API_URL` est le nom canonique (utilisé sur Vercel, où
+// navigateur et rendu serveur joignent tous deux la même API publique sur
+// Render — pas de réseau Docker interne) ; `NEXT_PUBLIC_API_BASE_URL` reste
+// supporté pour la config Docker locale existante.
+const PUBLIC_API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
 const INTERNAL_API_BASE_URL = process.env.INTERNAL_API_BASE_URL ?? PUBLIC_API_BASE_URL;
 
 export const apiClient = axios.create({

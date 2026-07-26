@@ -1,0 +1,128 @@
+# Blueprint Render — back-office Imperial Collection (Django REST + PostgreSQL + Redis + Celery).
+# Le frontend Next.js n'apparaît pas ici : il est déployé séparément sur Vercel
+# (voir /frontend/.env.example pour les variables à y renseigner).
+#
+# Déploiement : sur render.com, "New" → "Blueprint", pointer sur ce dépôt.
+# Toute variable marquée `sync: false` doit être saisie manuellement dans le
+# dashboard Render après la première création (clés/secrets non versionnés).
+
+databases:
+  - name: imperial-db
+    plan: free
+    databaseName: imperial_collection
+    user: imperial_collection
+
+services:
+  # ---- Redis (broker Celery + backend de résultats) ----
+  - type: redis
+    name: imperial-redis
+    plan: free
+    ipAllowList: [] # pas d'accès externe : seuls les services de ce Blueprint s'y connectent
+
+  # ---- API Django (web) ----
+  - type: web
+    name: imperial-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
+    autoDeploy: true
+    envVars: &backend-env
+      - key: DJANGO_SETTINGS_MODULE
+        value: core.settings.production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      # Domaine(s) exact(s) du frontend en production (ex. https://imperialcollection.com) —
+      # les previews Vercel (*.vercel.app) sont déjà couvertes par settings/production.py.
+      - key: DJANGO_CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: imperial-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: imperial-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: imperial-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: imperial-redis
+          property: connectionString
+      # ---- Stockage média (Cloudinary) ----
+      - key: MEDIA_STORAGE_BACKEND
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # ---- E-mail transactionnel (SMTP Resend / Brevo) ----
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: "Imperial Collection <notifications@imperialcollection.com>"
+      # ---- Paiement Mobile Money (CinetPay) ----
+      - key: CINETPAY_API_KEY
+        sync: false
+      - key: CINETPAY_SITE_ID
+        sync: false
+      - key: CINETPAY_SECRET_KEY
+        sync: false
+      - key: CINETPAY_NOTIFY_URL
+        sync: false
+      - key: CINETPAY_RETURN_URL
+        sync: false
+      # ---- WhatsApp ----
+      - key: WHATSAPP_ADMIN_PHONE_NUMBER
+        value: "237696000388"
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      # ---- Suivi d'erreurs (optionnel) ----
+      - key: SENTRY_DSN
+        sync: false
+
+  # ---- Worker Celery (envoi d'e-mails, notifications WhatsApp, mises à jour de statut) ----
+  - type: worker
+    name: imperial-celery-worker
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements/production.txt"
+    startCommand: "celery -A core worker -l info"
+    autoDeploy: true
+    envVars: *backend-env
+
+  # ---- Celery Beat (planificateur des tâches périodiques : expiration des
+  # réservations de stock, désactivation des coupons expirés) ----
+  - type: worker
+    name: imperial-celery-beat
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install -r requirements/production.txt"
+    startCommand: "celery -A core beat -l info"
+    autoDeploy: true
+    envVars: *backend-env

@@ -3,7 +3,7 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa: F401,F403
-from .base import MIDDLEWARE, env
+from .base import ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS, MIDDLEWARE, env
 
 DEBUG = False
 
@@ -13,11 +13,41 @@ MIDDLEWARE = [
     *MIDDLEWARE[1:],
 ]
 
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+# `base.py` configure le stockage média (Cloudinary/S3/local) via l'ancien
+# réglage `DEFAULT_FILE_STORAGE` — le dict unifié `STORAGES` (Django 4.2+) est
+# mutuellement exclusif avec lui, donc on reste sur son équivalent "ancien
+# style" pour les statiques plutôt que de mélanger les deux systèmes.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ==== Hébergement Render : domaines `*.onrender.com` ====
+# Render fournit automatiquement RENDER_EXTERNAL_HOSTNAME (le sous-domaine
+# exact attribué au service) à l'exécution — on l'ajoute en plus du wildcard
+# générique pour couvrir aussi bien la valeur exacte que les redirections.
+ALLOWED_HOSTS = [*ALLOWED_HOSTS, ".onrender.com"]
+render_external_hostname = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if render_external_hostname:
+    ALLOWED_HOSTS.append(render_external_hostname)
+
+# ==== Frontend Vercel : previews (*.vercel.app) + domaine(s) de prod ====
+# `CORS_ALLOWED_ORIGINS` (liste exacte, définie via DJANGO_CORS_ALLOWED_ORIGINS)
+# couvre le domaine de production custom ; le regex ci-dessous couvre en plus
+# tous les sous-domaines de preview Vercel (générés à chaque déploiement).
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# Django exige que CSRF_TRUSTED_ORIGINS liste des schémas complets (avec
+# wildcard de sous-domaine supporté nativement depuis Django 4).
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.vercel.app",
+    *[origin for origin in CORS_ALLOWED_ORIGINS if origin.startswith("https://")],
+]
+
+# Render (comme la plupart des PaaS) termine le TLS à la frontière et transmet
+# la requête en HTTP en interne avec cet en-tête — sans ce réglage,
+# SECURE_SSL_REDIRECT provoquerait une boucle de redirection infinie.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
