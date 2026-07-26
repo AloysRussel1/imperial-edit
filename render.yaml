@@ -34,7 +34,7 @@ services:
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    buildCommand: "pip install -r requirements/production.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_prod_superuser"
     startCommand: "gunicorn core.wsgi:application --bind 0.0.0.0:$PORT"
     autoDeploy: true
     envVars:
@@ -50,6 +50,23 @@ services:
         generateValue: true
       - key: DJANGO_DEBUG
         value: "False"
+      # ---- Bootstrap du superutilisateur (create_prod_superuser) ----
+      # Pas d'acces Shell sur le plan gratuit Render : ce compte est cree
+      # automatiquement au build, une seule fois (la commande est idempotente
+      # - sans effet si le compte existe deja). Saisir ces 5 valeurs
+      # manuellement dans le dashboard Render ; ne JAMAIS les committer dans
+      # le depot. Une fois le compte cree, ces variables peuvent etre
+      # supprimees du dashboard sans casser quoi que ce soit.
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_FIRST_NAME
+        sync: false
+      - key: DJANGO_SUPERUSER_LAST_NAME
+        sync: false
       - key: DJANGO_ALLOWED_HOSTS
         value: ".onrender.com"
       # Domaine(s) exact(s) du frontend en production (ex. https://imperialcollection.com) —
