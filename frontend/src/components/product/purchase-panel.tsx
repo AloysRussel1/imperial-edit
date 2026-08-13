@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Minus, Plus, ShoppingBag, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DepositCalculator } from "@/components/product/deposit-calculator";
+import { colorToSwatch } from "@/lib/color-swatches";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import type { DepositPercentage, ProductDetail } from "@/types";
@@ -14,6 +16,7 @@ interface PurchasePanelProps {
 }
 
 export function PurchasePanel({ product }: PurchasePanelProps) {
+  const router = useRouter();
   const sizes = useMemo(() => Array.from(new Set(product.variants.map((v) => v.size))), [product.variants]);
   const colors = useMemo(() => Array.from(new Set(product.variants.map((v) => v.color))), [product.variants]);
 
@@ -33,8 +36,8 @@ export function PurchasePanel({ product }: PurchasePanelProps) {
   const totalXaf = unitPrice * quantity;
   const inStock = selectedVariant?.is_in_stock ?? false;
 
-  function handleAddToCart() {
-    if (!selectedVariant) return;
+  function addToCart() {
+    if (!selectedVariant) return false;
     addItem(
       {
         variantId: selectedVariant.id,
@@ -50,8 +53,18 @@ export function PurchasePanel({ product }: PurchasePanelProps) {
       },
       quantity
     );
+    return true;
+  }
+
+  function handleAddToCart() {
+    if (!addToCart()) return;
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 2000);
+  }
+
+  function handleBuyNow() {
+    if (!addToCart()) return;
+    router.push("/checkout");
   }
 
   return (
@@ -81,23 +94,34 @@ export function PurchasePanel({ product }: PurchasePanelProps) {
 
       {colors.length > 1 ? (
         <div>
-          <p className="mb-2 text-xs uppercase tracking-widest2 text-imperial-black/50">Couleur</p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setSelectedColor(color)}
-                className={cn(
-                  "rounded-md border px-3 py-1.5 text-sm transition-colors",
-                  selectedColor === color
-                    ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
-                    : "border-imperial-black/15 text-imperial-black/70 hover:border-imperial-gold"
-                )}
-              >
-                {color}
-              </button>
-            ))}
+          <p className="mb-2 text-xs uppercase tracking-widest2 text-imperial-black/50">
+            Couleur — <span className="normal-case text-imperial-black/60">{selectedColor}</span>
+          </p>
+          <div className="flex flex-wrap gap-2.5">
+            {colors.map((color) => {
+              const swatch = colorToSwatch(color);
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectedColor(color)}
+                  aria-label={color}
+                  aria-pressed={selectedColor === color}
+                  title={color}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                    selectedColor === color ? "border-imperial-gold" : "border-transparent hover:border-imperial-black/20"
+                  )}
+                >
+                  <span
+                    className="h-6 w-6 rounded-full border border-imperial-black/10"
+                    style={swatch ? { background: swatch } : undefined}
+                  >
+                    {!swatch ? <span className="sr-only">{color}</span> : null}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -138,23 +162,34 @@ export function PurchasePanel({ product }: PurchasePanelProps) {
         onChangeDepositPercentage={setDepositPercentage}
       />
 
-      <Button
-        size="lg"
-        variant="gold"
-        className="w-full"
-        disabled={!selectedVariant || !inStock}
-        onClick={handleAddToCart}
-      >
-        {justAdded ? (
-          <>
-            <Check className="mr-2 h-4 w-4" /> Ajouté au panier
-          </>
-        ) : (
-          <>
-            <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter au panier
-          </>
-        )}
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button
+          size="lg"
+          variant="outline"
+          className="w-full sm:flex-1"
+          disabled={!selectedVariant || !inStock}
+          onClick={handleAddToCart}
+        >
+          {justAdded ? (
+            <>
+              <Check className="mr-2 h-4 w-4" /> Ajouté au panier
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter au panier
+            </>
+          )}
+        </Button>
+        <Button
+          size="lg"
+          variant="gold"
+          className="w-full sm:flex-1"
+          disabled={!selectedVariant || !inStock}
+          onClick={handleBuyNow}
+        >
+          <Zap className="mr-2 h-4 w-4" /> Acheter maintenant
+        </Button>
+      </div>
     </div>
   );
 }

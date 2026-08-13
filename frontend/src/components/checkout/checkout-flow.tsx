@@ -50,6 +50,7 @@ export function CheckoutFlow() {
   const [city, setCity] = useState("");
 
   const [plan, setPlan] = useState<PaymentPlan>("deposit50");
+  const [couponCode, setCouponCode] = useState("");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mtn_momo");
   const [payerPhone, setPayerPhone] = useState("");
@@ -105,6 +106,7 @@ export function CheckoutFlow() {
         shipping_address: shippingAddress,
         delivery_city: city,
         payment_method: paymentMethod,
+        coupon_code: couponCode.trim() || undefined,
       });
 
       const txn = await initiatePayment({
@@ -171,6 +173,18 @@ export function CheckoutFlow() {
     }
   }
 
+  const planOptions = [
+    { id: "deposit50" as const, label: t("checkout.planDeposit50Label"), description: t("checkout.planDepositDesc") },
+    { id: "deposit70" as const, label: t("checkout.planDeposit70Label"), description: t("checkout.planDepositDesc") },
+    { id: "full" as const, label: t("checkout.planFullLabel"), description: t("checkout.planFullDesc") },
+  ];
+
+  const paymentMethodOptions = [
+    { id: "mtn_momo" as const, icon: Smartphone, label: paymentMethodLabels.mtn_momo },
+    { id: "orange_money" as const, icon: Smartphone, label: paymentMethodLabels.orange_money },
+    { id: "card" as const, icon: CreditCard, label: paymentMethodLabels.card },
+  ];
+
   if (step === 4 && order && transaction) {
     return (
       <div className="mx-auto max-w-lg space-y-6 rounded-lg border border-imperial-gold/30 bg-imperial-gold/5 p-8 text-center">
@@ -218,82 +232,174 @@ export function CheckoutFlow() {
     );
   }
 
-  const planOptions = [
-    { id: "deposit50" as const, label: t("checkout.planDeposit50Label"), description: t("checkout.planDepositDesc") },
-    { id: "deposit70" as const, label: t("checkout.planDeposit70Label"), description: t("checkout.planDepositDesc") },
-    { id: "full" as const, label: t("checkout.planFullLabel"), description: t("checkout.planFullDesc") },
-  ];
-
-  const paymentMethodOptions = [
-    { id: "mtn_momo" as const, icon: Smartphone, label: paymentMethodLabels.mtn_momo },
-    { id: "orange_money" as const, icon: Smartphone, label: paymentMethodLabels.orange_money },
-    { id: "card" as const, icon: CreditCard, label: paymentMethodLabels.card },
-  ];
-
   return (
-    <div className="mx-auto max-w-2xl space-y-10">
+    <div className="space-y-8">
       <Stepper steps={tList("checkout.steps")} currentStep={step} />
 
-      {step === 1 ? (
-        <div className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step1Title")}</h2>
-          <div className="space-y-1.5">
-            <Label htmlFor="checkout-address">{t("checkout.addressLabel")}</Label>
-            <Input
-              id="checkout-address"
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder={t("checkout.addressPlaceholder")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="checkout-city">{t("checkout.cityLabel")}</Label>
-            <select
-              id="checkout-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-sm text-imperial-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold"
-            >
-              <option value="">{t("checkout.citySelectPlaceholder")}</option>
-              {DELIVERY_LOCATIONS.map((group) => (
-                <optgroup key={group.group} label={group.group}>
-                  {group.cities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+      {/* Récapitulatif toujours visible à droite (desktop) pendant tout le
+          tunnel d'achat — remonte au-dessus des étapes sur mobile. */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="space-y-6 lg:order-1">
+          {step === 1 ? (
+            <div className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-6">
+              <h2 className="font-display text-xl text-imperial-black">{t("checkout.step1Title")}</h2>
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-address">{t("checkout.addressLabel")}</Label>
+                <Input
+                  id="checkout-address"
+                  value={shippingAddress}
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  placeholder={t("checkout.addressPlaceholder")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="checkout-city">{t("checkout.cityLabel")}</Label>
+                <select
+                  id="checkout-city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-sm text-imperial-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold"
+                >
+                  <option value="">{t("checkout.citySelectPlaceholder")}</option>
+                  {DELIVERY_LOCATIONS.map((group) => (
+                    <optgroup key={group.group} label={group.group}>
+                      {group.cities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-          <div className="flex justify-end">
-            <Button variant="gold" disabled={!step1Valid} onClick={() => setStep(2)}>
-              {t("checkout.continue")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
+                </select>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="gold" disabled={!step1Valid} onClick={() => setStep(2)}>
+                  {t("checkout.continue")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
-      {step === 2 ? (
-        <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step2Title")}</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {planOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setPlan(option.id)}
-                className={cn(
-                  "rounded-lg border p-4 text-left transition-colors",
-                  plan === option.id
-                    ? "border-imperial-gold bg-imperial-gold/10"
-                    : "border-imperial-black/15 hover:border-imperial-gold"
-                )}
-              >
-                <p className="font-medium text-imperial-black">{option.label}</p>
-                <p className="text-xs text-imperial-black/50">{option.description}</p>
-              </button>
+          {step === 2 ? (
+            <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
+              <h2 className="font-display text-xl text-imperial-black">{t("checkout.step2Title")}</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {planOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setPlan(option.id)}
+                    className={cn(
+                      "rounded-lg border p-4 text-left transition-colors",
+                      plan === option.id
+                        ? "border-imperial-gold bg-imperial-gold/10"
+                        : "border-imperial-black/15 hover:border-imperial-gold"
+                    )}
+                  >
+                    <p className="font-medium text-imperial-black">{option.label}</p>
+                    <p className="text-xs text-imperial-black/50">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  {t("checkout.back")}
+                </Button>
+                <Button variant="gold" onClick={() => setStep(3)}>
+                  {t("checkout.continue")}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {step === 3 ? (
+            <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
+              <h2 className="font-display text-xl text-imperial-black">{t("checkout.step3Title")}</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {paymentMethodOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(option.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors",
+                      paymentMethod === option.id
+                        ? "border-imperial-gold bg-imperial-gold/10"
+                        : "border-imperial-black/15 hover:border-imperial-gold"
+                    )}
+                  >
+                    <option.icon className="h-5 w-5 text-imperial-gold" />
+                    <span className="text-sm font-medium text-imperial-black">{option.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {paymentMethod === "card" ? (
+                <p className="rounded-md bg-imperial-ivory p-4 text-sm text-imperial-black/60">{t("checkout.cardNotice")}</p>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="checkout-payer-phone">
+                    {t("checkout.payerPhoneLabel", { method: paymentMethodLabels[paymentMethod] })}
+                  </Label>
+                  <Input
+                    id="checkout-payer-phone"
+                    value={payerPhone}
+                    onChange={(e) => setPayerPhone(e.target.value)}
+                    placeholder="+237 6XX XXX XXX"
+                  />
+                </div>
+              )}
+
+              {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(2)} disabled={submitting}>
+                  {t("checkout.back")}
+                </Button>
+                <Button variant="gold" disabled={!step3Valid || submitting} onClick={handleConfirmAndPay}>
+                  {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {t("checkout.confirmAndPay")} <Price amountXaf={depositAmount} className="ml-1" />
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <aside className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-6 lg:sticky lg:top-32 lg:order-2">
+          <h3 className="text-xs uppercase tracking-widest2 text-imperial-black/50">
+            {t("checkout.summaryTitle")} ({items.length} {items.length > 1 ? t("checkout.articles") : t("checkout.article")})
+          </h3>
+          <ul className="space-y-3">
+            {items.map((item) => (
+              <li key={item.variantId} className="flex items-center gap-3 text-sm">
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-imperial-ivory">
+                  {item.imageUrl ? (
+                    <Image src={item.imageUrl} alt={item.name} fill sizes="40px" className="object-cover" />
+                  ) : null}
+                </div>
+                <div className="flex-1">
+                  <p className="text-imperial-black">{item.name}</p>
+                  <p className="text-xs text-imperial-black/45">
+                    {item.size} · {item.color} · x{item.quantity}
+                  </p>
+                </div>
+                <Price amountXaf={item.unitPriceXaf * item.quantity} className="text-imperial-black" />
+              </li>
             ))}
+          </ul>
+
+          <div className="space-y-1.5 border-t border-imperial-black/10 pt-3">
+            <Label htmlFor="checkout-coupon" className="text-xs">
+              Code promo (optionnel)
+            </Label>
+            <Input
+              id="checkout-coupon"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              placeholder="IMPERIAL10"
+              className="h-9 text-sm"
+            />
           </div>
 
           <dl className="space-y-2 rounded-lg bg-imperial-ivory p-4 text-sm">
@@ -317,98 +423,11 @@ export function CheckoutFlow() {
             </div>
           </dl>
 
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(1)}>
-              {t("checkout.back")}
-            </Button>
-            <Button variant="gold" onClick={() => setStep(3)}>
-              {t("checkout.continue")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {step === 3 ? (
-        <div className="space-y-5 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h2 className="font-display text-xl text-imperial-black">{t("checkout.step3Title")}</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {paymentMethodOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setPaymentMethod(option.id)}
-                className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors",
-                  paymentMethod === option.id
-                    ? "border-imperial-gold bg-imperial-gold/10"
-                    : "border-imperial-black/15 hover:border-imperial-gold"
-                )}
-              >
-                <option.icon className="h-5 w-5 text-imperial-gold" />
-                <span className="text-sm font-medium text-imperial-black">{option.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {paymentMethod === "card" ? (
-            <p className="rounded-md bg-imperial-ivory p-4 text-sm text-imperial-black/60">{t("checkout.cardNotice")}</p>
-          ) : (
-            <div className="space-y-1.5">
-              <Label htmlFor="checkout-payer-phone">
-                {t("checkout.payerPhoneLabel", { method: paymentMethodLabels[paymentMethod] })}
-              </Label>
-              <Input
-                id="checkout-payer-phone"
-                value={payerPhone}
-                onChange={(e) => setPayerPhone(e.target.value)}
-                placeholder="+237 6XX XXX XXX"
-              />
-            </div>
-          )}
-
-          {error ? <p className="text-sm text-red-700">{error}</p> : null}
-
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setStep(2)} disabled={submitting}>
-              {t("checkout.back")}
-            </Button>
-            <Button variant="gold" disabled={!step3Valid || submitting} onClick={handleConfirmAndPay}>
-              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {t("checkout.confirmAndPay")} <Price amountXaf={depositAmount} className="ml-1" />
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {step !== 4 ? (
-        <div className="space-y-3 rounded-lg border border-imperial-black/10 bg-white p-6">
-          <h3 className="text-xs uppercase tracking-widest2 text-imperial-black/50">
-            {t("checkout.summaryTitle")} ({items.length} {items.length > 1 ? t("checkout.articles") : t("checkout.article")})
-          </h3>
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li key={item.variantId} className="flex items-center gap-3 text-sm">
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-imperial-ivory">
-                  {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt={item.name} fill sizes="40px" className="object-cover" />
-                  ) : null}
-                </div>
-                <div className="flex-1">
-                  <p className="text-imperial-black">{item.name}</p>
-                  <p className="text-xs text-imperial-black/45">
-                    {item.size} · {item.color} · x{item.quantity}
-                  </p>
-                </div>
-                <Price amountXaf={item.unitPriceXaf * item.quantity} className="text-imperial-black" />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <Badge variant="outline" className="mx-auto block w-fit text-center">
-        {t("checkout.secureBadge")}
-      </Badge>
+          <Badge variant="outline" className="mx-auto block w-fit text-center">
+            {t("checkout.secureBadge")}
+          </Badge>
+        </aside>
+      </div>
     </div>
   );
 }

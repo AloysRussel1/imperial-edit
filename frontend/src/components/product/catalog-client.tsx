@@ -1,13 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { LayoutGrid, List } from "lucide-react";
 
 import { ProductGrid } from "@/components/product/product-grid";
-import { cn } from "@/lib/utils";
-import { CATALOG_PRODUCT_TYPES, PRICE_BANDS, PRODUCT_TYPE_LABELS } from "@/lib/constants";
+import { ProductListItem } from "@/components/product/product-list-item";
+import { cn, formatXAF } from "@/lib/utils";
+import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import type { DepositPercentage, ProductDetail, ProductType } from "@/types";
 
 const DEPOSIT_FILTER_OPTIONS: DepositPercentage[] = [50, 70];
+
+type SortOption = "relevance" | "price-asc" | "price-desc" | "newest" | "name-asc";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "relevance", label: "Pertinence" },
+  { value: "newest", label: "Nouveautés" },
+  { value: "price-asc", label: "Prix croissant" },
+  { value: "price-desc", label: "Prix décroissant" },
+  { value: "name-asc", label: "Nom (A-Z)" },
+];
 
 interface CatalogClientProps {
   products: ProductDetail[];
@@ -31,7 +43,15 @@ export function CatalogClient({
   const [brands, setBrands] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [deposits, setDeposits] = useState<DepositPercentage[]>([]);
-  const [priceBandIndex, setPriceBandIndex] = useState<number | null>(null);
+  const [sort, setSort] = useState<SortOption>(sortNew ? "newest" : "relevance");
+  const [view, setView] = useState<"grid" | "list">("grid");
+
+  const catalogMaxPrice = useMemo(
+    () => (products.length ? Math.max(...products.map((p) => p.base_price_xaf)) : 0),
+    [products]
+  );
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const priceCeiling = maxPrice ?? catalogMaxPrice;
 
   const allSizes = useMemo(() => {
     const sizes = new Set<string>();
@@ -64,11 +84,8 @@ export function CatalogClient({
     if (deposits.length > 0) {
       result = result.filter((p) => deposits.includes(p.default_deposit_percentage));
     }
-    if (priceBandIndex !== null) {
-      const band = PRICE_BANDS[priceBandIndex];
-      if (band) {
-        result = result.filter((p) => p.base_price_xaf >= band.min && p.base_price_xaf < band.max);
-      }
+    if (maxPrice !== null) {
+      result = result.filter((p) => p.base_price_xaf <= maxPrice);
     }
     if (featuredOnly) {
       result = result.filter((p) => p.is_featured);
@@ -76,11 +93,26 @@ export function CatalogClient({
     if (saleOnly) {
       result = result.filter((p) => p.is_on_sale);
     }
-    if (sortNew) {
-      result = [...result].sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+
+    result = [...result];
+    switch (sort) {
+      case "price-asc":
+        result.sort((a, b) => a.base_price_xaf - b.base_price_xaf);
+        break;
+      case "price-desc":
+        result.sort((a, b) => b.base_price_xaf - a.base_price_xaf);
+        break;
+      case "name-asc":
+        result.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+        break;
+      case "newest":
+        result.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+        break;
+      default:
+        break;
     }
     return result;
-  }, [products, query, types, brands, sizes, deposits, priceBandIndex, sortNew, featuredOnly, saleOnly]);
+  }, [products, query, types, brands, sizes, deposits, maxPrice, sort, featuredOnly, saleOnly]);
 
   function toggleType(type: ProductType) {
     setTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
@@ -103,15 +135,17 @@ export function CatalogClient({
     setBrands([]);
     setSizes([]);
     setDeposits([]);
-    setPriceBandIndex(null);
+    setMaxPrice(null);
   }
 
   const hasActiveFilters =
-    types.length > 0 || brands.length > 0 || sizes.length > 0 || deposits.length > 0 || priceBandIndex !== null;
+    types.length > 0 || brands.length > 0 || sizes.length > 0 || deposits.length > 0 || maxPrice !== null;
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[240px_1fr]">
-      <aside className="space-y-8">
+      {/* `lg:sticky` : la sidebar de filtres reste visible pendant le défilement
+          de la grille, décalée sous le header sticky (h-16 + h-12 + marge). */}
+      <aside className="space-y-8 lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
         <div>
           <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">Catégories</h3>
           <div className="flex flex-wrap gap-2 lg:flex-col lg:items-start lg:gap-1.5">
@@ -177,26 +211,24 @@ export function CatalogClient({
           </div>
         </div>
 
-        <div>
-          <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">Tranche de prix</h3>
-          <div className="flex flex-col items-start gap-1.5">
-            {PRICE_BANDS.map((band, index) => (
-              <button
-                key={band.label}
-                type="button"
-                onClick={() => setPriceBandIndex(priceBandIndex === index ? null : index)}
-                className={cn(
-                  "rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
-                  priceBandIndex === index
-                    ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
-                    : "border-imperial-black/15 text-imperial-black/70 hover:border-imperial-gold"
-                )}
-              >
-                {band.label}
-              </button>
-            ))}
+        {catalogMaxPrice > 0 ? (
+          <div>
+            <h3 className="mb-3 flex items-center justify-between text-xs uppercase tracking-widest2 text-imperial-black/50">
+              <span>Prix maximum</span>
+              <span className="normal-case tracking-normal text-imperial-black/70">{formatXAF(priceCeiling)}</span>
+            </h3>
+            <input
+              type="range"
+              min={0}
+              max={catalogMaxPrice}
+              step={Math.max(1000, Math.round(catalogMaxPrice / 100))}
+              value={priceCeiling}
+              onChange={(event) => setMaxPrice(Number(event.target.value))}
+              className="w-full accent-imperial-gold"
+              aria-label="Filtrer par prix maximum"
+            />
           </div>
-        </div>
+        ) : null}
 
         <div>
           <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">Option d&apos;acompte</h3>
@@ -231,10 +263,63 @@ export function CatalogClient({
       </aside>
 
       <div>
-        <p className="mb-6 text-sm text-imperial-black/50">
-          {filtered.length} article{filtered.length > 1 ? "s" : ""}
-        </p>
-        <ProductGrid products={filtered} />
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-imperial-black/50">
+            {filtered.length} article{filtered.length > 1 ? "s" : ""} trouvé{filtered.length > 1 ? "s" : ""}
+          </p>
+          <div className="flex items-center gap-3">
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortOption)}
+              aria-label="Trier les produits"
+              className="rounded-md border border-imperial-black/15 bg-white px-3 py-1.5 text-sm text-imperial-black/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-imperial-gold"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center rounded-md border border-imperial-black/15">
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                aria-label="Vue grille"
+                aria-pressed={view === "grid"}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-l-md transition-colors",
+                  view === "grid" ? "bg-imperial-black text-imperial-ivory" : "text-imperial-black/50 hover:text-imperial-gold"
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                aria-label="Vue liste"
+                aria-pressed={view === "list"}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-r-md transition-colors",
+                  view === "list" ? "bg-imperial-black text-imperial-ivory" : "text-imperial-black/50 hover:text-imperial-gold"
+                )}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {view === "grid" ? (
+          <ProductGrid products={filtered} />
+        ) : filtered.length === 0 ? (
+          <p className="py-16 text-center text-imperial-black/50">Aucun article ne correspond à cette sélection.</p>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((product) => (
+              <ProductListItem key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ interface AuthState {
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
   setAccessToken: (token: string) => void;
+  setUser: (user: ApiUser) => void;
   setHasHydrated: (value: boolean) => void;
 }
 
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => set({ accessToken: null, refreshToken: null, user: null }),
       setAccessToken: (token) => set({ accessToken: token }),
+      setUser: (user) => set({ user }),
       setHasHydrated: (value) => set({ _hasHydrated: value }),
     }),
     { name: "imperial-collection-auth", skipHydration: true }

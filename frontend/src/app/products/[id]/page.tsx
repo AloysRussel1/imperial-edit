@@ -1,11 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, MapPin, Truck } from "lucide-react";
+import { MapPin, Truck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { Price } from "@/components/common/price";
 import { ProductGallery } from "@/components/product/product-gallery";
+import { ProductReassurance } from "@/components/product/product-reassurance";
+import { ProductTabs } from "@/components/product/product-tabs";
 import { PurchasePanel } from "@/components/product/purchase-panel";
+import { RelatedProducts } from "@/components/product/related-products";
 import { fetchProductBySlug } from "@/lib/api";
 import { PRODUCT_TYPE_LABELS, STOCK_STATUS_LABELS } from "@/lib/constants";
 
@@ -20,25 +23,32 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound();
   }
 
+  const discountPct = product.compare_at_price_xaf
+    ? Math.round((1 - product.base_price_xaf / product.compare_at_price_xaf) * 100)
+    : null;
+
   return (
     <main className="container py-12">
-      <nav className="mb-8 flex items-center gap-1.5 text-xs text-imperial-black/50">
-        <Link href="/products" className="hover:text-imperial-gold">
-          Catalogue
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <span>{PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}</span>
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-imperial-black">{product.name}</span>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Accueil", href: "/" },
+          { label: "Catalogue", href: "/products" },
+          { label: PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type, href: `/products?type=${product.product_type}` },
+          { label: product.name },
+        ]}
+      />
 
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <ProductGallery images={product.images} />
 
         <div>
-          <div className="mb-4 flex flex-wrap gap-1.5">
+          <div className="mb-4 flex flex-wrap items-center gap-1.5">
             {product.is_on_sale ? <Badge variant="sale">Promotion</Badge> : null}
+            {discountPct ? <Badge variant="sale">-{discountPct}%</Badge> : null}
             {product.is_featured ? <Badge variant="gold">Sélection Impériale</Badge> : null}
+            <Badge variant={product.availability.status === "in_stock" ? "success" : "outline"}>
+              {STOCK_STATUS_LABELS[product.availability.status]}
+            </Badge>
           </div>
           <p className="text-sm text-imperial-black/50">{product.brand}</p>
           <h1 className="mt-1 font-display text-3xl text-imperial-black md:text-4xl">{product.name}</h1>
@@ -65,13 +75,17 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </div>
           </div>
 
-          <p className="mt-5 text-sm leading-relaxed text-imperial-black/70">{product.description}</p>
-
           <div className="mt-8">
             <PurchasePanel product={product} />
           </div>
+
+          <ProductReassurance deliveryEstimate={product.availability.delivery_estimate} />
         </div>
       </div>
+
+      <ProductTabs product={product} />
+
+      <RelatedProducts currentProductId={product.id} productType={product.product_type} />
     </main>
   );
 }

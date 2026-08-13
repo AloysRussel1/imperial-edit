@@ -114,6 +114,14 @@ export function CartSheet() {
                   Passer commande
                 </Link>
               </SheetClose>
+              <SheetClose asChild>
+                <Link
+                  href="/cart"
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
+                >
+                  Voir le panier
+                </Link>
+              </SheetClose>
               <p className="text-center text-xs text-imperial-black/45">
                 Le détail de l&apos;acompte par article s&apos;affiche sur chaque fiche produit.
               </p>

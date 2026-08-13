@@ -1,14 +1,16 @@
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { SectionHeading } from "@/components/common/section-heading";
 import { CatalogClient } from "@/components/product/catalog-client";
 import { fetchProducts } from "@/lib/api";
-import { CATALOG_PRODUCT_TYPES } from "@/lib/constants";
+import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import type { ProductType } from "@/types";
 
 interface ProductsPageProps {
   searchParams: { q?: string; sort?: string; type?: string; featured?: string; sale?: string };
 }
 
-function pageTitle(sortNew: boolean, featuredOnly: boolean, saleOnly: boolean): string {
+function pageTitle(sortNew: boolean, featuredOnly: boolean, saleOnly: boolean, typeLabel: string | null): string {
+  if (typeLabel) return typeLabel;
   if (sortNew) return "Nouveautés";
   if (featuredOnly) return "Meilleures ventes";
   if (saleOnly) return "Offres du moment";
@@ -23,13 +25,16 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const initialType = CATALOG_PRODUCT_TYPES.includes(searchParams.type as ProductType)
     ? (searchParams.type as ProductType)
     : undefined;
+  const typeLabel = initialType ? PRODUCT_TYPE_LABELS[initialType] ?? null : null;
+  const title = pageTitle(sortNew, featuredOnly, saleOnly, typeLabel);
 
   return (
     <main className="container py-14">
+      <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: "Catalogue", href: "/products" }, ...(title !== "Toute la collection" ? [{ label: title }] : [])]} />
       <SectionHeading
         align="left"
         eyebrow="Le Catalogue"
-        title={pageTitle(sortNew, featuredOnly, saleOnly)}
+        title={title}
         description="Sacs, souliers, prêt-à-porter et parfums — chaque pièce est disponible à la commande avec acompte."
         className="mb-12"
       />

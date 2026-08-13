@@ -259,6 +259,16 @@ export async function fetchCurrentUser(): Promise<ApiUser> {
   return data;
 }
 
+export type UpdateProfilePayload = Partial<
+  Pick<ApiUser, "first_name" | "last_name" | "phone_number" | "whatsapp_number" | "city" | "country">
+>;
+
+/** MeView est un RetrieveUpdateAPIView : accepte un PATCH partiel sur le compte connecté. */
+export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiUser> {
+  const { data } = await apiClient.patch<ApiUser>("/auth/me/", payload);
+  return data;
+}
+
 // ---- Sourcing ----
 
 export interface SubmitSourcingPayload {

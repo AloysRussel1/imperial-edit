@@ -22,13 +22,6 @@ export const NAV_LINKS = [
   },
 ] as const;
 
-export const PRICE_BANDS = [
-  { label: "Moins de 100 000 XAF", min: 0, max: 100_000 },
-  { label: "100 000 – 300 000 XAF", min: 100_000, max: 300_000 },
-  { label: "300 000 – 600 000 XAF", min: 300_000, max: 600_000 },
-  { label: "600 000 XAF et plus", min: 600_000, max: Infinity },
-] as const;
-
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {
   bags: "Sacs",
   shoes: "Chaussures",

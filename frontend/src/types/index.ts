@@ -227,6 +227,7 @@ export interface CheckoutPayload {
   shipping_address: string;
   delivery_city: string;
   payment_method: PaymentMethod;
+  coupon_code?: string;
 }
 
 export type TransactionPurpose = "deposit" | "balance" | "full";
