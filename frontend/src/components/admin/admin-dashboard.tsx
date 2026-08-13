@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Banknote, Loader2, PackageSearch, RefreshCw, ShieldAlert, ShoppingBag, Wallet } from "lucide-react";
+import { AlertTriangle, Banknote, CalendarClock, Loader2, PackageSearch, RefreshCw, ShieldAlert, ShoppingBag, Wallet } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/common/price";
@@ -147,6 +147,12 @@ export function AdminDashboard() {
     );
   }
 
+  const today = new Date().toDateString();
+  const ordersToday = orders.filter((order) => new Date(order.created_at).toDateString() === today).length;
+  const outOfStockCount = products.filter(
+    (product) => product.is_active && product.variants.every((v) => v.available_quantity <= 0)
+  ).length;
+
   return (
     <div className="space-y-14">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -166,7 +172,7 @@ export function AdminDashboard() {
           label={t("admin.kpi.totalRevenue")}
           value={<Price amountXaf={summary?.total_revenue_xaf ?? 0} />}
         />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <KpiCard
             icon={Wallet}
             label={t("admin.kpi.depositsCollected")}
@@ -183,6 +189,8 @@ export function AdminDashboard() {
             label={t("admin.kpi.pendingSourcing")}
             value={summary?.pending_sourcing_count ?? 0}
           />
+          <KpiCard icon={CalendarClock} label="Commandes du jour" value={ordersToday} />
+          <KpiCard icon={AlertTriangle} label="Produits en rupture" value={outOfStockCount} />
         </div>
       </section>
 

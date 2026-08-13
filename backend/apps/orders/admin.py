@@ -1,7 +1,19 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django_celery_beat.models import ClockedSchedule, CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
+from django_celery_results.models import GroupResult, TaskResult
 
 from .models import Cart, CartItem, Order, OrderItem, OrderStatusHistory
+
+# Le plan gratuit Render ne fait tourner aucun worker/beat Celery (voir
+# CELERY_TASK_ALWAYS_EAGER dans settings/production.py) : ces modèles de
+# planification/résultats de tâches ne servent donc plus à rien au quotidien
+# et n'encombrent que le menu de gestion de la boutique. Django enregistre
+# ces apps AVANT les apps locales dans INSTALLED_APPS, donc elles sont déjà
+# enregistrées au moment où ce module est importé par autodiscover().
+for _model in (PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule, TaskResult, GroupResult):
+    if admin.site.is_registered(_model):
+        admin.site.unregister(_model)
 
 
 class OrderItemInline(admin.TabularInline):
