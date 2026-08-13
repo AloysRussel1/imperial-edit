@@ -1,10 +1,15 @@
 const fr = {
   nav: {
+    home: "Accueil",
     newArrivals: "Nouveautés",
     catalog: "Catalogue",
+    collections: "Collections",
+    bestSellers: "Meilleures Ventes",
+    deals: "Offres",
     sourcing: "Sourcing Sur Photo",
     tracking: "Suivi de Colis",
     about: "À Propos",
+    contact: "Contact",
   },
   languageSwitcher: {
     ariaLabel: "Choisir la langue",
@@ -208,11 +213,16 @@ const fr = {
 
 const en: typeof fr = {
   nav: {
+    home: "Home",
     newArrivals: "New Arrivals",
     catalog: "Catalog",
+    collections: "Collections",
+    bestSellers: "Best Sellers",
+    deals: "Deals",
     sourcing: "Photo Sourcing",
     tracking: "Track Package",
     about: "About",
+    contact: "Contact",
   },
   languageSwitcher: {
     ariaLabel: "Choose language",

@@ -12,12 +12,22 @@ const DEPOSIT_FILTER_OPTIONS: DepositPercentage[] = [50, 70];
 interface CatalogClientProps {
   products: ProductDetail[];
   initialQuery?: string;
+  initialType?: ProductType;
   sortNew?: boolean;
+  featuredOnly?: boolean;
+  saleOnly?: boolean;
 }
 
-export function CatalogClient({ products, initialQuery, sortNew }: CatalogClientProps) {
+export function CatalogClient({
+  products,
+  initialQuery,
+  initialType,
+  sortNew,
+  featuredOnly,
+  saleOnly,
+}: CatalogClientProps) {
   const [query] = useState(initialQuery ?? "");
-  const [types, setTypes] = useState<ProductType[]>([]);
+  const [types, setTypes] = useState<ProductType[]>(initialType ? [initialType] : []);
   const [brands, setBrands] = useState<string[]>([]);
   const [sizes, setSizes] = useState<string[]>([]);
   const [deposits, setDeposits] = useState<DepositPercentage[]>([]);
@@ -60,11 +70,17 @@ export function CatalogClient({ products, initialQuery, sortNew }: CatalogClient
         result = result.filter((p) => p.base_price_xaf >= band.min && p.base_price_xaf < band.max);
       }
     }
+    if (featuredOnly) {
+      result = result.filter((p) => p.is_featured);
+    }
+    if (saleOnly) {
+      result = result.filter((p) => p.is_on_sale);
+    }
     if (sortNew) {
       result = [...result].sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
     }
     return result;
-  }, [products, query, types, brands, sizes, deposits, priceBandIndex, sortNew]);
+  }, [products, query, types, brands, sizes, deposits, priceBandIndex, sortNew, featuredOnly, saleOnly]);
 
   function toggleType(type: ProductType) {
     setTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));

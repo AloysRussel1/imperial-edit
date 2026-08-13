@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
 import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { useFavoritesStore } from "@/store/favorites-store";
 import type { ProductDetail } from "@/types";
 
 interface ProductCardProps {
@@ -21,11 +24,23 @@ export function ProductCard({ product }: ProductCardProps) {
   // sur la même vignette de repli que pour les produits sans photo du tout.
   const [imageFailed, setImageFailed] = useState(false);
 
-  // Temporaire : à retirer une fois la cause des images manquantes en
-  // production confirmée/résolue — permet d'inspecter en direct, depuis la
-  // console du navigateur sur le site déployé, la structure exacte reçue
-  // pour chaque produit (notamment `images`, vide ou non).
-  console.log("[DEBUG Product Image]", product.name, product);
+  // Souscription directe à `items` (plutôt que la méthode `isFavorite()` du
+  // store, non réactive) pour que le cœur se mette à jour immédiatement au clic.
+  const isFavorite = useFavoritesStore((state) => state.items.some((i) => i.productId === product.id));
+  const toggleFavorite = useFavoritesStore((state) => state.toggle);
+
+  function handleToggleFavorite(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleFavorite({
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      brand: product.brand,
+      imageUrl: cover?.url ?? "",
+      basePriceXaf: product.base_price_xaf,
+    });
+  }
 
   return (
     <Link
@@ -61,6 +76,15 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.is_on_sale ? <Badge variant="sale">Promotion</Badge> : null}
           {product.is_featured ? <Badge variant="gold">Sélection Impériale</Badge> : null}
         </div>
+        <button
+          type="button"
+          onClick={handleToggleFavorite}
+          aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          aria-pressed={isFavorite}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-imperial-black/60 shadow-sm backdrop-blur transition-colors hover:text-imperial-gold"
+        >
+          <Heart className={cn("h-4 w-4", isFavorite && "fill-imperial-gold text-imperial-gold")} strokeWidth={1.75} />
+        </button>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
         <p className="text-xs uppercase tracking-wide text-imperial-black/45">
@@ -71,10 +95,15 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="mt-auto flex items-baseline gap-2 pt-2">
           <Price amountXaf={product.base_price_xaf} className="text-sm font-semibold text-imperial-black" />
           {product.compare_at_price_xaf ? (
-            <Price
-              amountXaf={product.compare_at_price_xaf}
-              className="text-xs text-imperial-black/40 line-through"
-            />
+            <>
+              <Price
+                amountXaf={product.compare_at_price_xaf}
+                className="text-xs text-imperial-black/40 line-through"
+              />
+              <Badge variant="sale" className="ml-auto">
+                -{Math.round((1 - product.base_price_xaf / product.compare_at_price_xaf) * 100)}%
+              </Badge>
+            </>
           ) : null}
         </div>
       </div>

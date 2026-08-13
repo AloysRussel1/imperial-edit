@@ -10,11 +10,16 @@ export const EUR_XAF_RATE = 655.957;
 export const DEPOSIT_PERCENTAGES = [50, 70] as const;
 
 export const NAV_LINKS = [
+  { labelKey: "nav.home", href: "/" },
   { labelKey: "nav.newArrivals", href: "/products?sort=new" },
-  { labelKey: "nav.catalog", href: "/products" },
-  { labelKey: "nav.sourcing", href: "/sourcing" },
-  { labelKey: "nav.tracking", href: "/tracking" },
-  { labelKey: "nav.about", href: "/about" },
+  { labelKey: "nav.collections", href: "/products" },
+  { labelKey: "nav.bestSellers", href: "/products?featured=true" },
+  { labelKey: "nav.deals", href: "/products?sale=true" },
+  {
+    labelKey: "nav.contact",
+    href: buildWhatsAppMessageLink("Bonjour, j'ai une question au sujet d'Imperial Collection."),
+    external: true,
+  },
 ] as const;
 
 export const PRICE_BANDS = [

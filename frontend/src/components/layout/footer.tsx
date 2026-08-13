@@ -12,6 +12,8 @@ const HELP_LINKS = [
   { labelKey: "footer.faqLink", href: "/faq" },
   { labelKey: "footer.paymentLink", href: "/faq#paiement" },
   { labelKey: "footer.sourcingLink", href: "/sourcing" },
+  { labelKey: "nav.tracking", href: "/tracking" },
+  { labelKey: "nav.about", href: "/about" },
 ] as const;
 
 export function Footer() {
@@ -32,13 +34,26 @@ export function Footer() {
         <div className="space-y-3">
           <h3 className="text-xs uppercase tracking-widest2 text-imperial-gold">{t("footer.houseTitle")}</h3>
           <ul className="space-y-2 text-sm text-imperial-ivory/75">
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className="transition-colors hover:text-imperial-gold">
-                  {t(link.labelKey)}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) =>
+              "external" in link && link.external ? (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-imperial-gold"
+                  >
+                    {t(link.labelKey)}
+                  </a>
+                </li>
+              ) : (
+                <li key={link.href}>
+                  <Link href={link.href} className="transition-colors hover:text-imperial-gold">
+                    {t(link.labelKey)}
+                  </Link>
+                </li>
+              )
+            )}
           </ul>
         </div>
 

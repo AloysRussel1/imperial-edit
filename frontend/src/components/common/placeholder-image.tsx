@@ -1,15 +1,6 @@
-import { Footprints, Gem, Shirt, ShoppingBag, SprayCan, Watch } from "lucide-react";
-
 import { cn } from "@/lib/utils";
+import { DEFAULT_PRODUCT_ICON, PRODUCT_TYPE_ICONS } from "@/lib/product-type-icons";
 import type { ProductType } from "@/types";
-
-const ICONS: Record<ProductType, typeof ShoppingBag> = {
-  bags: ShoppingBag,
-  shoes: Footprints,
-  clothing: Shirt,
-  perfumes: SprayCan,
-  watches: Watch,
-};
 
 interface PlaceholderImageProps {
   hue: number;
@@ -23,7 +14,7 @@ interface PlaceholderImageProps {
  * bibliothèque d'images réelle n'est pas alimentée depuis le back-office.
  */
 export function PlaceholderImage({ hue, productType, className, iconClassName }: PlaceholderImageProps) {
-  const Icon = productType ? ICONS[productType] : Gem;
+  const Icon = productType ? PRODUCT_TYPE_ICONS[productType] : DEFAULT_PRODUCT_ICON;
   return (
     <div
       className={cn("relative flex items-center justify-center overflow-hidden", className)}
