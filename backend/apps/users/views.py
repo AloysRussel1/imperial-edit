@@ -30,14 +30,15 @@ class ImperialTokenObtainPairView(TokenObtainPairView):
 
 
 def _issue_otp(user: User) -> None:
-    otp = EmailVerificationOTP.objects.create(user=user)
-    # Même filet que send_welcome_email : un échec d'envoi (SMTP/API en
-    # panne, mauvaise config) ne doit jamais faire échouer l'inscription
-    # elle-même — le compte existe déjà en base à ce stade.
+    # Tout englobé (création en base ET envoi) : un échec à n'importe quelle
+    # étape — écriture DB, rendu de template, service e-mail en panne —
+    # ne doit jamais faire échouer l'inscription ou le renvoi de code
+    # eux-mêmes, le compte existe déjà en base à ce stade.
     try:
+        otp = EmailVerificationOTP.objects.create(user=user)
         send_otp_email.delay(user.email, user.first_name, otp.code)
     except Exception:
-        logger.exception("Échec de l'envoi du code de vérification à %s", user.email)
+        logger.exception("Échec de l'émission du code de vérification à %s", user.email)
 
 
 class RegisterView(generics.CreateAPIView):

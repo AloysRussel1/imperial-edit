@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
@@ -40,6 +41,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ("email", "password", "first_name", "last_name", "phone_number", "whatsapp_number", "city", "role")
 
+    def validate_email(self, value):
+        # `User.email` (hérité d'AbstractUser) n'a pas `unique=True` en base —
+        # seul `username` l'est, et `create()` lui affecte la valeur de
+        # `email` par convention. Sans cette vérification explicite, DRF ne
+        # génère aucun UniqueValidator ici (il ne le fait que pour les champs
+        # réellement uniques au niveau du modèle), et une adresse déjà
+        # inscrite plantait avec un IntegrityError non rattrapé (500) au lieu
+        # d'un 400 propre.
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte existe déjà avec cette adresse e-mail.")
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop("password")
         # Compte créé inactif : reste inutilisable pour se connecter (voir
@@ -48,7 +61,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         # VerifyEmailSerializer et RegisterView.perform_create.
         user = User(username=validated_data["email"], is_active=False, **validated_data)
         user.set_password(password)
-        user.save()
+        try:
+            user.save()
+        except IntegrityError:
+            # Filet contre la fenêtre de course entre validate_email() et ce
+            # save() (deux inscriptions concurrentes avec la même adresse) :
+            # la contrainte unique de `username` protège toujours l'intégrité
+            # des données, mais ne doit plus jamais remonter en 500 brut.
+            raise serializers.ValidationError({"email": "Un compte existe déjà avec cette adresse e-mail."})
         return user
 
 
