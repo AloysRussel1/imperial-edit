@@ -1,15 +1,157 @@
 /*
- * Surcouche de thème pour l'admin Django (Jazzmin) — aligne les teintes
- * exactes de la vitrine The Imperial Collection (or #C9A24B, charcoal #211F1D,
- * noir #0B0B0C) par-dessus le thème "darkly" + accent "warning" de Jazzmin.
+ * Surcouche de thème pour l'admin Django (Jazzmin) — remplace le thème
+ * Bootswatch "darkly" (fond charbon générique, boutons vert/bleu de base)
+ * par le design system exact de la vitrine The Imperial Collection : ivoire
+ * #F7F4EE, cartes blanches, accents or #C9A24B / #E4C87A, noir #0B0B0C /
+ * charbon #211F1D — mêmes valeurs que frontend/tailwind.config.ts (thème
+ * "imperial"), pas une approximation.
  */
 
 :root {
   --ie-gold: #c9a24b;
   --ie-gold-light: #e4c87a;
+  --ie-bronze: #8a6a3f;
   --ie-charcoal: #211f1d;
   --ie-black: #0b0b0c;
+  --ie-ivory: #f7f4ee;
+  --ie-white: #ffffff;
+  --ie-ink: #211f1d;
+  --ie-ink-soft: rgba(33, 31, 29, 0.65);
+  --ie-border: rgba(33, 31, 29, 0.12);
 }
+
+/* ---------------------------------------------------------------------- */
+/* 1. Fond général : ivoire (body / content-wrapper / footer)             */
+/* ---------------------------------------------------------------------- */
+
+body,
+.content-wrapper,
+.main-footer {
+  background-color: var(--ie-ivory) !important;
+  color: var(--ie-ink) !important;
+}
+
+.main-footer {
+  border-top: 1px solid var(--ie-border) !important;
+  color: var(--ie-ink-soft) !important;
+}
+
+a {
+  color: var(--ie-bronze);
+}
+
+a:hover,
+a:focus {
+  color: var(--ie-gold);
+}
+
+/* ---------------------------------------------------------------------- */
+/* 2. Cartes & conteneurs : blanc pur, bordures fines, texte lisible      */
+/* ---------------------------------------------------------------------- */
+
+.card,
+.small-box,
+.login-box .card,
+.dropdown-menu,
+.select2-dropdown,
+.module,
+table.table {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+  border: 1px solid var(--ie-border) !important;
+  box-shadow: 0 1px 3px rgba(11, 11, 12, 0.06) !important;
+}
+
+.card-header,
+.card-footer {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+  border-color: var(--ie-border) !important;
+  font-weight: 600;
+}
+
+.card-header h5,
+.card-header h4,
+.card-header h3 {
+  color: var(--ie-ink) !important;
+  font-family: var(--font-display, "Georgia", serif);
+  letter-spacing: 0.01em;
+}
+
+.card,
+.small-box {
+  border-radius: 10px !important;
+}
+
+.small-box .icon {
+  color: rgba(33, 31, 29, 0.12) !important;
+}
+
+/* Tableaux (listes de modèles, dashboard, changelist) */
+.table,
+.table td,
+.table th,
+table.table tbody tr td,
+table.table thead th {
+  color: var(--ie-ink) !important;
+  border-color: var(--ie-border) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(201, 162, 75, 0.07) !important;
+  color: var(--ie-ink) !important;
+}
+
+.table thead th {
+  border-bottom: 2px solid var(--ie-border) !important;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ie-ink-soft) !important;
+}
+
+/* Champs de formulaire : bordure fine, focus doré plutôt que le bleu Bootstrap. */
+.form-control,
+.select2-container .select2-selection,
+textarea {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+  border: 1px solid var(--ie-border) !important;
+  border-radius: 6px !important;
+}
+
+.form-control:focus,
+.select2-container--focus .select2-selection {
+  border-color: var(--ie-gold) !important;
+  box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.18) !important;
+}
+
+/* Onglets horizontaux des formulaires produit (changeform_format: horizontal_tabs) */
+.nav-tabs {
+  border-bottom-color: var(--ie-border) !important;
+}
+
+.nav-tabs .nav-link {
+  color: var(--ie-ink-soft) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--ie-ink) !important;
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--ie-gold) !important;
+  font-weight: 600;
+}
+
+.tab-content {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 3. Sidebar gauche : noir profond, texte doré au survol/actif           */
+/* ---------------------------------------------------------------------- */
 
 body.theme-darkly,
 .main-sidebar,
@@ -24,15 +166,21 @@ body.theme-darkly,
 
 .brand-link {
   border-bottom: 1px solid rgba(201, 162, 75, 0.25) !important;
+  background-color: var(--ie-black) !important;
 }
 
 .brand-text {
   color: var(--ie-gold-light) !important;
   font-weight: 600;
   letter-spacing: 0.03em;
+  font-family: var(--font-display, "Georgia", serif);
 }
 
-/* Liens, boutons et éléments actifs en accent doré plutôt que l'ambre par défaut de Bootstrap. */
+.nav-sidebar > .nav-item > .nav-link,
+.nav-sidebar .nav-treeview > .nav-item > .nav-link {
+  color: rgba(247, 244, 238, 0.75) !important;
+}
+
 .nav-sidebar > .nav-item > .nav-link.active,
 .nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
   background-color: rgba(201, 162, 75, 0.16) !important;
@@ -44,7 +192,56 @@ body.theme-darkly,
   color: var(--ie-gold-light) !important;
 }
 
+.nav-sidebar .nav-icon {
+  color: inherit !important;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 4. Header / navbar supérieure : noir épuré, champs de recherche ivoire */
+/* ---------------------------------------------------------------------- */
+
+.main-header.navbar {
+  border-bottom: 1px solid rgba(201, 162, 75, 0.2) !important;
+}
+
+.main-header .nav-link {
+  color: rgba(247, 244, 238, 0.85) !important;
+}
+
+.main-header .nav-link:hover {
+  color: var(--ie-gold-light) !important;
+}
+
+.navbar-form .form-control,
+.main-header input[type="text"],
+.main-header input[type="search"] {
+  background-color: var(--ie-ivory) !important;
+  color: var(--ie-ink) !important;
+  border: 1px solid rgba(201, 162, 75, 0.3) !important;
+}
+
+.navbar-form .btn,
+.main-header .input-group-append .btn {
+  background-color: var(--ie-gold) !important;
+  border-color: var(--ie-gold) !important;
+  color: var(--ie-black) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 5. Boutons : or plein pour l'action principale, noir/contour en second */
+/* ---------------------------------------------------------------------- */
+
+.btn {
+  border-radius: 6px !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Action principale (Ajouter, Enregistrer) : fond or, texte sombre. */
 .btn-warning,
+.btn-success,
+.btn-primary,
 .badge-warning {
   background-color: var(--ie-gold) !important;
   border-color: var(--ie-gold) !important;
@@ -52,15 +249,43 @@ body.theme-darkly,
 }
 
 .btn-warning:hover,
-.btn-warning:focus {
+.btn-warning:focus,
+.btn-success:hover,
+.btn-success:focus,
+.btn-primary:hover,
+.btn-primary:focus {
   background-color: var(--ie-gold-light) !important;
   border-color: var(--ie-gold-light) !important;
   color: var(--ie-black) !important;
 }
 
-.text-warning,
-a {
-  color: var(--ie-gold);
+/* Action secondaire (Voir, Modifier) : contour noir fin, fond transparent. */
+.btn-info,
+.btn-secondary,
+.btn-outline-light {
+  background-color: transparent !important;
+  border: 1px solid var(--ie-charcoal) !important;
+  color: var(--ie-charcoal) !important;
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-outline-light:hover,
+.btn-outline-light:focus {
+  background-color: var(--ie-charcoal) !important;
+  border-color: var(--ie-charcoal) !important;
+  color: var(--ie-ivory) !important;
+}
+
+/* Suppression : rouge conservé (signal de sécurité universel), coins alignés. */
+.btn-danger {
+  border-radius: 6px !important;
+}
+
+.text-warning {
+  color: var(--ie-bronze) !important;
 }
 
 .small-box.bg-warning,
@@ -69,7 +294,7 @@ a {
   color: var(--ie-black) !important;
 }
 
-/* Miniatures de photos (sourcing) dans les tableaux d'admin */
+/* Miniatures de photos (produits, sourcing) dans les tableaux d'admin */
 .field-thumbnail img,
 .ie-thumb {
   border-radius: 6px;
