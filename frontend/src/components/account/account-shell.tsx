@@ -84,36 +84,52 @@ export function AccountShell() {
     setActive(requestedTab as TabId);
   }, [hydrated, requestedTab, role, router]);
 
-  const tabs = [
-    ...BASE_TABS,
-    ...VENDOR_TABS.filter((tab) => canAccessTab(tab.id, role)),
-  ];
+  const visibleVendorTabs = VENDOR_TABS.filter((tab) => canAccessTab(tab.id, role));
 
   function selectTab(tab: TabId) {
     setActive(tab);
     router.replace(`/dashboard?tab=${tab}`, { scroll: false });
   }
 
+  function renderTabButton(tab: { id: TabId; label: string; icon: typeof User }) {
+    return (
+      <button
+        key={tab.id}
+        type="button"
+        onClick={() => selectTab(tab.id)}
+        aria-pressed={active === tab.id}
+        className={cn(
+          "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2.5 text-sm transition-colors lg:w-full",
+          active === tab.id
+            ? "bg-imperial-black text-imperial-ivory"
+            : "text-imperial-black/70 hover:bg-imperial-black/5"
+        )}
+      >
+        <tab.icon className="h-4 w-4" strokeWidth={1.5} />
+        {tab.label}
+      </button>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
-      <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => selectTab(tab.id)}
-            aria-pressed={active === tab.id}
-            className={cn(
-              "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2.5 text-sm transition-colors lg:w-full",
-              active === tab.id
-                ? "bg-imperial-black text-imperial-ivory"
-                : "text-imperial-black/70 hover:bg-imperial-black/5"
-            )}
-          >
-            <tab.icon className="h-4 w-4" strokeWidth={1.5} />
-            {tab.label}
-          </button>
-        ))}
+      <nav className="flex flex-col gap-4">
+        <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">{BASE_TABS.map(renderTabButton)}</div>
+
+        {/* Regroupées et clairement identifiées sous le même intitulé que le
+            lien "Gestion de ma Boutique" du menu compte, pour que l'espace
+            vendeur soit reconnaissable comme un tout cohérent plutôt qu'une
+            suite d'onglets mélangés à ceux du client. */}
+        {visibleVendorTabs.length > 0 ? (
+          <div className="flex flex-col gap-1 border-t border-imperial-black/10 pt-4 lg:pt-4">
+            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-widest2 text-imperial-black/40">
+              Gestion de ma Boutique
+            </p>
+            <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
+              {visibleVendorTabs.map(renderTabButton)}
+            </div>
+          </div>
+        ) : null}
       </nav>
 
       <div>

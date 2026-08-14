@@ -10,6 +10,9 @@ export interface VariantAxisConfig {
   /** Une nuance de couleur réelle n'a de sens que pour sacs/vêtements/chaussures —
    * pour les autres catégories, le 2e axe est un texte libre (pas de pastille). */
   secondaryIsColor: boolean;
+  /** Valeurs les plus fréquentes du 1er axe, proposées en chips à un clic —
+   * une saisie manuelle reste toujours possible pour une valeur hors-liste. */
+  primaryPresets: string[];
 }
 
 /**
@@ -25,6 +28,7 @@ export const VARIANT_AXIS_BY_TYPE: Record<ProductType, VariantAxisConfig> = {
     secondaryLabel: "Couleur",
     secondaryPlaceholder: "Noir, Camel…",
     secondaryIsColor: true,
+    primaryPresets: ["Unique", "Mini", "S", "M", "L", "XL"],
   },
   clothing: {
     primaryLabel: "Taille",
@@ -32,6 +36,7 @@ export const VARIANT_AXIS_BY_TYPE: Record<ProductType, VariantAxisConfig> = {
     secondaryLabel: "Couleur",
     secondaryPlaceholder: "Noir, Blanc…",
     secondaryIsColor: true,
+    primaryPresets: ["XS", "S", "M", "L", "XL", "XXL"],
   },
   shoes: {
     primaryLabel: "Pointure",
@@ -39,6 +44,7 @@ export const VARIANT_AXIS_BY_TYPE: Record<ProductType, VariantAxisConfig> = {
     secondaryLabel: "Couleur",
     secondaryPlaceholder: "Noir, Blanc…",
     secondaryIsColor: true,
+    primaryPresets: ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"],
   },
   perfumes: {
     primaryLabel: "Volume",
@@ -46,6 +52,7 @@ export const VARIANT_AXIS_BY_TYPE: Record<ProductType, VariantAxisConfig> = {
     secondaryLabel: "Concentration",
     secondaryPlaceholder: "Eau de Parfum, Eau de Toilette…",
     secondaryIsColor: false,
+    primaryPresets: ["30ml", "50ml", "75ml", "100ml", "125ml"],
   },
   watches: {
     primaryLabel: "Diamètre",
@@ -53,5 +60,6 @@ export const VARIANT_AXIS_BY_TYPE: Record<ProductType, VariantAxisConfig> = {
     secondaryLabel: "Matière",
     secondaryPlaceholder: "Acier, Or rose, Cuir…",
     secondaryIsColor: false,
+    primaryPresets: ["36mm", "38mm", "40mm", "42mm", "44mm"],
   },
 };
