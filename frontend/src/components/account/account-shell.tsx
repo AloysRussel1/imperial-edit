@@ -31,16 +31,29 @@ const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "favorites", label: "Mes favoris", icon: Heart },
 ];
 
-// Réservé au rôle vendeur : un admin gère déjà l'ensemble du catalogue et de
-// toutes les commandes via /admin-dashboard, plus complet — pas de doublon ici.
+// Réservés au vendeur. "vendor-products" fait exception (voir
+// ADMIN_CUMULATIVE_TABS) : un admin a aussi accès à la gestion du catalogue
+// depuis son propre menu ("Gestion de ma Boutique"), mais gère commandes et
+// sourcing via la vue plus complète d'/admin-dashboard (états résolus déjà
+// gérés là-bas, pas de doublon incomplet ici).
 const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "vendor-products", label: "Catalogue Produits", icon: Store },
   { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
   { id: "vendor-sourcing", label: "Demandes de sourcing", icon: Search },
 ];
 
+// Droits cumulatifs (Admin = Client + Vendeur + Admin) : seul cet onglet
+// vendeur est aussi ouvert à l'admin.
+const ADMIN_CUMULATIVE_TABS: TabId[] = ["vendor-products"];
+
 function isVendorOnlyTab(tab: string): tab is TabId {
   return (VENDOR_ONLY_TABS as string[]).includes(tab);
+}
+
+function canAccessTab(tab: TabId, role: string | undefined): boolean {
+  if (!isVendorOnlyTab(tab)) return true;
+  if (role === "vendor") return true;
+  return role === "admin" && ADMIN_CUMULATIVE_TABS.includes(tab);
 }
 
 export function AccountShell() {
@@ -63,7 +76,7 @@ export function AccountShell() {
     if (!hydrated || !requestedTab || !KNOWN_TABS.includes(requestedTab as TabId)) {
       return;
     }
-    if (isVendorOnlyTab(requestedTab) && role !== "vendor") {
+    if (!canAccessTab(requestedTab as TabId, role)) {
       setActive("profile");
       router.replace("/dashboard?tab=profile", { scroll: false });
       return;
@@ -71,7 +84,10 @@ export function AccountShell() {
     setActive(requestedTab as TabId);
   }, [hydrated, requestedTab, role, router]);
 
-  const tabs = role === "vendor" ? [...BASE_TABS, ...VENDOR_TABS] : BASE_TABS;
+  const tabs = [
+    ...BASE_TABS,
+    ...VENDOR_TABS.filter((tab) => canAccessTab(tab.id, role)),
+  ];
 
   function selectTab(tab: TabId) {
     setActive(tab);
@@ -104,12 +120,12 @@ export function AccountShell() {
         {active === "orders" ? <CustomerDashboard /> : null}
         {active === "profile" ? <ProfileTab /> : null}
         {active === "favorites" ? <FavoritesContent /> : null}
-        {/* Double garde, en plus de la redirection ci-dessus : ces deux
-            composants ne sont jamais présents dans le DOM pour un non-vendeur,
-            même l'instant d'un rendu avant que l'effet ne corrige `active`. */}
-        {active === "vendor-products" && role === "vendor" ? <VendorProductsTab /> : null}
-        {active === "vendor-orders" && role === "vendor" ? <VendorOrdersTab /> : null}
-        {active === "vendor-sourcing" && role === "vendor" ? <VendorSourcingTab /> : null}
+        {/* Double garde, en plus de la redirection ci-dessus : ces composants
+            ne sont jamais présents dans le DOM pour un rôle qui n'y a pas
+            droit, même l'instant d'un rendu avant que l'effet ne corrige `active`. */}
+        {active === "vendor-products" && canAccessTab("vendor-products", role) ? <VendorProductsTab /> : null}
+        {active === "vendor-orders" && canAccessTab("vendor-orders", role) ? <VendorOrdersTab /> : null}
+        {active === "vendor-sourcing" && canAccessTab("vendor-sourcing", role) ? <VendorSourcingTab /> : null}
       </div>
     </div>
   );

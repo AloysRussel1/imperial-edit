@@ -81,7 +81,9 @@ export function AccountMenu() {
               </Link>
             </DropdownMenuItem>
 
-            {user.role === "vendor" ? (
+            {/* Droits cumulatifs : un admin a aussi accès à l'espace vendeur
+                (Admin = Client + Vendeur + Admin), pas uniquement un vendeur. */}
+            {user.role === "vendor" || user.role === "admin" ? (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>

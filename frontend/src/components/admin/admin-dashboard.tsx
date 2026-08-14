@@ -6,9 +6,9 @@ import { AlertTriangle, Banknote, CalendarClock, Loader2, PackageSearch, Refresh
 
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/common/price";
-import { AdminCatalogPanel } from "@/components/admin/admin-catalog-panel";
 import { AdminOrdersTable } from "@/components/admin/admin-orders-table";
 import { AdminSourcingPanel } from "@/components/admin/admin-sourcing-panel";
+import { VendorProductsTab } from "@/components/vendor/vendor-products-tab";
 import { useTranslation } from "@/hooks/use-translation";
 import { fetchAdminSummary, fetchAllOrders, fetchAllSourcingRequests, fetchProducts } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -203,7 +203,10 @@ export function AdminDashboard() {
       </section>
 
       <section>
-        <AdminCatalogPanel products={products} />
+        {/* Réutilise le composant/API de l'espace vendeur : côté backend,
+            VendorProductViewSet renvoie déjà le catalogue complet (tous
+            vendeurs confondus) pour un compte admin — droits cumulatifs. */}
+        <VendorProductsTab title="Catalogue produits" />
       </section>
     </div>
   );

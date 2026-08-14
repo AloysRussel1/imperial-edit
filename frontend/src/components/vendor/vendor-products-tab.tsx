@@ -18,7 +18,13 @@ function totalStock(product: ProductDetail): number {
   return product.variants.reduce((sum, v) => sum + v.available_quantity, 0);
 }
 
-export function VendorProductsTab() {
+interface VendorProductsTabProps {
+  /** Permet à l'espace admin (droits cumulatifs : Admin = Vendeur + Admin) de
+   * réutiliser ce même composant/API sous un intitulé de section différent. */
+  title?: string;
+}
+
+export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabProps) {
   const [products, setProducts] = useState<ProductDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<ProductDetail | null | "new">(null);
@@ -60,7 +66,7 @@ export function VendorProductsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-display text-xl text-imperial-black">Mes produits</h2>
+        <h2 className="font-display text-xl text-imperial-black">{title}</h2>
         <Button variant="gold" size="sm" onClick={() => setEditing("new")}>
           <Plus className="mr-1.5 h-4 w-4" /> Ajouter un produit
         </Button>
