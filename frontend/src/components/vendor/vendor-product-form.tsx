@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type FormEvent, useEffect, useState } from "react";
+import { type DragEvent, type FormEvent, useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { Loader2, Plus, Trash2, Upload } from "lucide-react";
 
@@ -16,6 +16,7 @@ import {
   uploadVendorProductImage,
 } from "@/lib/api";
 import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
+import { VARIANT_AXIS_BY_TYPE } from "@/lib/variant-labels";
 import { toast } from "@/store/toast-store";
 import type { ProductCategory, ProductDetail, ProductType, VendorProductVariantPayload } from "@/types";
 
@@ -63,8 +64,11 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
   );
   const [images, setImages] = useState(product?.images ?? []);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const axis = VARIANT_AXIS_BY_TYPE[productType];
 
   useEffect(() => {
     fetchCategories()
@@ -88,18 +92,38 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
     setVariants((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function handleImageUpload(file: File) {
+  async function handleImageUpload(files: FileList | File[]) {
     if (!product) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
     setUploadingImage(true);
+    let uploaded = 0;
     try {
-      await uploadVendorProductImage(product.slug, file);
-      setImages((prev) => [...prev, { id: `temp-${Date.now()}`, url: URL.createObjectURL(file), alt: name }]);
-      toast.success("Photo ajoutée.");
+      // Séquentiel plutôt que Promise.all : chaque upload attribue sa
+      // `position` côté backend à partir de `product.images.count()` — des
+      // requêtes concurrentes pourraient lire ce compte avant qu'il ne soit
+      // à jour et produire deux photos à la même position.
+      for (const file of list) {
+        await uploadVendorProductImage(product.slug, file);
+        setImages((prev) => [...prev, { id: `temp-${Date.now()}-${uploaded}`, url: URL.createObjectURL(file), alt: name }]);
+        uploaded += 1;
+      }
+      toast.success(uploaded > 1 ? `${uploaded} photos ajoutées.` : "Photo ajoutée.");
     } catch {
-      toast.error("Échec de l'upload de la photo.");
+      toast.error(
+        uploaded > 0
+          ? `${uploaded}/${list.length} photo(s) envoyée(s) — échec sur la suite.`
+          : "Échec de l'upload de la photo."
+      );
     } finally {
       setUploadingImage(false);
     }
+  }
+
+  function handleImageDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingImage(false);
+    if (event.dataTransfer.files.length) handleImageUpload(event.dataTransfer.files);
   }
 
   async function handleImageDelete(imageId: string) {
@@ -247,14 +271,16 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <Label>Variantes (taille / couleur / stock)</Label>
+          <Label>
+            Variantes ({axis.primaryLabel.toLowerCase()} / {axis.secondaryLabel.toLowerCase()} / stock)
+          </Label>
           <Button type="button" variant="outline" size="sm" onClick={addVariant}>
             <Plus className="mr-1 h-3.5 w-3.5" /> Ajouter
           </Button>
         </div>
         <div className="space-y-2">
           {variants.map((variant, index) => (
-            <div key={index} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center gap-2">
+            <div key={index} className="grid grid-cols-2 items-center gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
               <Input
                 placeholder="SKU"
                 value={variant.sku}
@@ -262,13 +288,15 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
                 className="h-9 text-sm"
               />
               <Input
-                placeholder="Taille"
+                placeholder={axis.primaryPlaceholder}
+                title={axis.primaryLabel}
                 value={variant.size}
                 onChange={(e) => updateVariant(index, { size: e.target.value })}
                 className="h-9 text-sm"
               />
               <Input
-                placeholder="Couleur"
+                placeholder={axis.secondaryPlaceholder}
+                title={axis.secondaryLabel}
                 value={variant.color}
                 onChange={(e) => updateVariant(index, { color: e.target.value })}
                 className="h-9 text-sm"
@@ -285,9 +313,10 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
                 type="button"
                 onClick={() => removeVariant(index)}
                 aria-label="Retirer cette variante"
-                className="text-imperial-black/40 hover:text-red-700"
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-md border border-imperial-black/10 py-1.5 text-xs text-imperial-black/50 hover:border-red-300 hover:text-red-700 sm:col-span-1 sm:border-0 sm:py-0"
               >
                 <Trash2 className="h-4 w-4" />
+                <span className="sm:hidden">Retirer</span>
               </button>
             </div>
           ))}
@@ -297,36 +326,49 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
       {isEdit ? (
         <div>
           <Label>Photos</Label>
-          <div className="mt-2 flex flex-wrap gap-3">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingImage(true);
+            }}
+            onDragLeave={() => setIsDraggingImage(false)}
+            onDrop={handleImageDrop}
+            className={`mt-2 flex flex-wrap gap-3 rounded-lg border-2 border-dashed p-3 transition-colors ${
+              isDraggingImage ? "border-imperial-gold bg-imperial-gold/5" : "border-transparent"
+            }`}
+          >
             {images.map((img) => (
-              <div key={img.id} className="group relative h-20 w-20 overflow-hidden rounded-md bg-imperial-ivory">
+              <div key={img.id} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-imperial-ivory">
                 <Image src={img.url} alt={img.alt} fill sizes="80px" unoptimized className="object-cover" />
                 <button
                   type="button"
                   onClick={() => handleImageDelete(img.id)}
-                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-imperial-black/60 opacity-0 transition-opacity hover:text-red-700 group-hover:opacity-100"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-imperial-black/60 opacity-100 transition-opacity hover:text-red-700 sm:opacity-0 sm:group-hover:opacity-100"
                   aria-label="Supprimer cette photo"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
             ))}
-            <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-imperial-black/20 text-imperial-black/40 hover:border-imperial-gold hover:text-imperial-gold">
+            <label className="flex h-20 w-20 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-imperial-black/20 text-imperial-black/40 hover:border-imperial-gold hover:text-imperial-gold">
               {uploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-              <span className="text-[0.65rem]">Ajouter</span>
+              <span className="text-center text-[0.65rem] leading-tight">Glisser ou choisir</span>
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 disabled={uploadingImage}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
+                  if (e.target.files?.length) handleImageUpload(e.target.files);
                   e.target.value = "";
                 }}
               />
             </label>
           </div>
+          <p className="mt-1.5 text-xs text-imperial-black/40">
+            Glissez-déposez plusieurs photos ici, ou sélectionnez-en plusieurs à la fois depuis l&apos;explorateur de fichiers.
+          </p>
         </div>
       ) : (
         <p className="text-xs text-imperial-black/45">

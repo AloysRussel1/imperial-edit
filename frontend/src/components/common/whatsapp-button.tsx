@@ -27,7 +27,10 @@ export function WhatsAppButton({
         rel="noopener noreferrer"
         aria-label="Contacter The Imperial Collection sur WhatsApp"
         className={cn(
-          "fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-elevated transition-transform hover:scale-105",
+          // Décalé plus haut sous lg : sur mobile/tablette, la fiche produit
+          // affiche une barre d'achat fixe en bas d'écran (voir PurchasePanel)
+          // qui occuperait sinon le même espace que ce bouton flottant.
+          "fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-elevated transition-transform hover:scale-105 sm:right-6 lg:bottom-6 lg:h-14 lg:w-14",
           className
         )}
       >

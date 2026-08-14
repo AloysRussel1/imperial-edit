@@ -88,75 +88,133 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
           Aucun produit pour le moment — ajoutez votre première pièce.
         </div>
       ) : (
-        <div className="w-full max-w-full overflow-x-auto rounded-xl border border-imperial-black/10 bg-white">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-imperial-black/10 text-xs uppercase tracking-wide text-imperial-black/45">
-              <tr>
-                <th className="px-4 py-3 font-medium">Image</th>
-                <th className="px-4 py-3 font-medium">Produit</th>
-                <th className="px-4 py-3 font-medium">Catégorie</th>
-                <th className="px-4 py-3 font-medium">Prix</th>
-                <th className="px-4 py-3 font-medium">Stock</th>
-                <th className="px-4 py-3 font-medium">Statut</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-imperial-black/5">
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-4 py-3">
-                    <div className="h-12 w-12 overflow-hidden rounded-md bg-imperial-ivory">
-                      {product.images[0] ? (
-                        <Image
-                          src={product.images[0].url}
-                          alt={product.images[0].alt || product.name}
-                          width={48}
-                          height={48}
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
+        <>
+          {/* Cartes empilées : lisibles sans défilement horizontal, boutons
+              d'action pleine largeur pour un ciblage confortable au pouce. */}
+          <div className="space-y-3 md:hidden">
+            {products.map((product) => (
+              <div key={product.id} className="space-y-3 rounded-xl border border-imperial-black/10 bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-imperial-ivory">
+                    {product.images[0] ? (
+                      <Image
+                        src={product.images[0].url}
+                        alt={product.images[0].alt || product.name}
+                        width={56}
+                        height={56}
+                        unoptimized
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-imperial-black">{product.name}</p>
+                    <p className="text-xs text-imperial-black/50">
+                      {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Price amountXaf={product.base_price_xaf} className="text-sm font-semibold text-imperial-black" />
+                      <span className="text-xs text-imperial-black/45">· Stock {totalStock(product)}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-imperial-black">{product.name}</td>
-                  <td className="px-4 py-3 text-imperial-black/70">
-                    {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">
-                    <Price amountXaf={product.base_price_xaf} />
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{totalStock(product)}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={product.is_active ? "success" : "outline"}>
-                      {product.is_active ? "Actif" : "Inactif"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setEditing(product)} title="Éditer">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={busySlug === product.slug}
-                        onClick={() => handleDelete(product)}
-                        title="Supprimer"
-                        className="hover:border-red-700 hover:text-red-700"
-                      >
-                        {busySlug === product.slug ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </td>
+                  </div>
+                  <Badge variant={product.is_active ? "success" : "outline"} className="shrink-0">
+                    {product.is_active ? "Actif" : "Inactif"}
+                  </Badge>
+                </div>
+                <div className="flex gap-2 border-t border-imperial-black/10 pt-3">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(product)}>
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Éditer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 hover:border-red-700 hover:text-red-700"
+                    disabled={busySlug === product.slug}
+                    onClick={() => handleDelete(product)}
+                  >
+                    {busySlug === product.slug ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Supprimer
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tableau classique à partir de md. */}
+          <div className="hidden w-full max-w-full overflow-x-auto rounded-xl border border-imperial-black/10 bg-white md:block">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b border-imperial-black/10 text-xs uppercase tracking-wide text-imperial-black/45">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Image</th>
+                  <th className="px-4 py-3 font-medium">Produit</th>
+                  <th className="px-4 py-3 font-medium">Catégorie</th>
+                  <th className="px-4 py-3 font-medium">Prix</th>
+                  <th className="px-4 py-3 font-medium">Stock</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-imperial-black/5">
+                {products.map((product) => (
+                  <tr key={product.id}>
+                    <td className="px-4 py-3">
+                      <div className="h-12 w-12 overflow-hidden rounded-md bg-imperial-ivory">
+                        {product.images[0] ? (
+                          <Image
+                            src={product.images[0].url}
+                            alt={product.images[0].alt || product.name}
+                            width={48}
+                            height={48}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-imperial-black">{product.name}</td>
+                    <td className="px-4 py-3 text-imperial-black/70">
+                      {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">
+                      <Price amountXaf={product.base_price_xaf} />
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">{totalStock(product)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={product.is_active ? "success" : "outline"}>
+                        {product.is_active ? "Actif" : "Inactif"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditing(product)} title="Éditer">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busySlug === product.slug}
+                          onClick={() => handleDelete(product)}
+                          title="Supprimer"
+                          className="hover:border-red-700 hover:text-red-700"
+                        >
+                          {busySlug === product.slug ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>

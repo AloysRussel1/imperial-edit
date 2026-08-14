@@ -428,6 +428,32 @@ export function CheckoutFlow() {
           </Badge>
         </aside>
       </div>
+
+      {/* Barre d'action fixe mobile/tablette : accès permanent au montant dû
+          et à l'étape suivante sans avoir à redescendre jusqu'au bouton du
+          formulaire — les boutons du formulaire restent aussi disponibles. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-imperial-black/10 bg-white/95 p-3 backdrop-blur [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+        <div className="min-w-0 shrink-0">
+          <p className="text-[0.65rem] uppercase tracking-wide text-imperial-black/45">
+            {t("checkout.dueTodayLabel")}
+          </p>
+          <Price amountXaf={depositAmount} className="font-semibold text-imperial-gold" />
+        </div>
+        {step === 1 ? (
+          <Button variant="gold" className="flex-1" disabled={!step1Valid} onClick={() => setStep(2)}>
+            {t("checkout.continue")}
+          </Button>
+        ) : step === 2 ? (
+          <Button variant="gold" className="flex-1" onClick={() => setStep(3)}>
+            {t("checkout.continue")}
+          </Button>
+        ) : (
+          <Button variant="gold" className="flex-1" disabled={!step3Valid || submitting} onClick={handleConfirmAndPay}>
+            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {t("checkout.confirmAndPay")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
