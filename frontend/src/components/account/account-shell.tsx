@@ -26,7 +26,7 @@ const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
 // Réservé au rôle vendeur : un admin gère déjà l'ensemble du catalogue et de
 // toutes les commandes via /admin-dashboard, plus complet — pas de doublon ici.
 const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
-  { id: "vendor-products", label: "Mes produits", icon: Store },
+  { id: "vendor-products", label: "Catalogue Produits", icon: Store },
   { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
 ];
 

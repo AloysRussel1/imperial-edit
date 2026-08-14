@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Store, User, UserCircle, UserPlus } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  PackageSearch,
+  Settings,
+  ShoppingBag,
+  User,
+  UserCircle,
+  UserPlus,
+} from "lucide-react";
 
 import {
   DropdownMenu,
@@ -66,7 +76,7 @@ export function AccountMenu() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/dashboard?tab=orders" className="flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4" />
+                <PackageSearch className="h-4 w-4" />
                 Mes commandes
               </Link>
             </DropdownMenuItem>
@@ -79,8 +89,8 @@ export function AccountMenu() {
                     href="/dashboard?tab=vendor-products"
                     className="flex items-center gap-2 font-medium text-imperial-gold"
                   >
-                    <Store className="h-4 w-4" />
-                    Espace vendeur
+                    <ShoppingBag className="h-4 w-4" />
+                    Gestion de ma Boutique
                   </Link>
                 </DropdownMenuItem>
               </>
@@ -91,8 +101,8 @@ export function AccountMenu() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/admin-dashboard" className="flex items-center gap-2 font-medium text-imperial-gold">
-                    <ShieldCheck className="h-4 w-4" />
-                    Console admin
+                    <LayoutDashboard className="h-4 w-4" />
+                    Tableau de bord Plateforme
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -102,8 +112,8 @@ export function AccountMenu() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
                   >
-                    <ShieldCheck className="h-4 w-4" />
-                    Backoffice Django
+                    <Settings className="h-4 w-4" />
+                    Administration Django
                   </a>
                 </DropdownMenuItem>
               </>
