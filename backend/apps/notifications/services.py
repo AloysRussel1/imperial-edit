@@ -142,7 +142,11 @@ def send_brevo_email(*, to_email: str, to_name: str, subject: str, html_content:
             timeout=15,
         )
         response.raise_for_status()
-    except requests.RequestException:
+    except Exception:
+        # Volontairement large (pas juste requests.RequestException) : cette
+        # fonction est le seul point d'envoi e-mail transactionnel de tout le
+        # flux d'inscription/OTP — aucune erreur, réseau ou autre, ne doit
+        # jamais s'en échapper pour remonter jusqu'à la vue appelante.
         logger.exception("Échec de l'envoi Brevo vers %s", to_email)
         _log(
             channel=NotificationChannel.EMAIL,
