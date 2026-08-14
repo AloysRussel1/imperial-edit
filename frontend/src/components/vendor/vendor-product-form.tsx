@@ -15,6 +15,7 @@ import {
   updateVendorProduct,
   uploadVendorProductImage,
 } from "@/lib/api";
+import { describeApiError } from "@/lib/api-errors";
 import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import { VARIANT_AXIS_BY_TYPE } from "@/lib/variant-labels";
 import { toast } from "@/store/toast-store";
@@ -110,9 +111,13 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
     setVariants((prev) => prev.filter((_, i) => i !== index));
   }
 
+  /** Horodatage (base36) plutôt que le nom du produit : deux variantes créées
+   * pour des produits différents mais au même nom (fréquent — "Unique",
+   * champ encore vide au moment du clic…) généraient sinon le même SKU et
+   * heurtaient la contrainte `unique=True` de `ProductVariant.sku` en base. */
   function suggestSku(primaryValue: string): string {
-    const base = slugify(name || productType).toUpperCase().replace(/-/g, "");
-    return `${base || productType.toUpperCase()}-${primaryValue}`.toUpperCase().replace(/\s+/g, "");
+    const timestamp = Date.now().toString(36).toUpperCase();
+    return `SKU-${timestamp}-${primaryValue}`.toUpperCase().replace(/\s+/g, "");
   }
 
   /** Chip cliquée : crée la déclinaison (SKU suggéré, stock à 0, couleur
@@ -189,6 +194,24 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    // Validation immédiate, sans aller-retour réseau, pour les deux causes
+    // d'échec les plus fréquentes — le reste (SKU en doublon, etc.) reste
+    // du ressort du backend, seule source fiable pour l'unicité en base.
+    if (!categoryId) {
+      const message = "Merci de sélectionner une catégorie avant d'enregistrer le produit.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+    const priceValue = Number(basePrice);
+    if (!basePrice.trim() || Number.isNaN(priceValue) || priceValue <= 0) {
+      const message = "Le prix (XAF) doit être un nombre supérieur à 0.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
     setSaving(true);
     setSavingStep("product");
     try {
@@ -224,9 +247,12 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
 
       onSaved(saved);
     } catch (err) {
+      // Le détail exact renvoyé par DRF (ex. "Variantes #1 — SKU : Un objet
+      // product variant avec ce champ sku existe déjà.") plutôt qu'une
+      // phrase générique qui obligeait à deviner quel champ posait problème.
       const message =
         err instanceof AxiosError && err.response?.status === 400
-          ? "Vérifiez les champs — SKU déjà utilisé, catégorie manquante ou prix invalide."
+          ? describeApiError(err.response.data, "Vérifiez les champs du formulaire.")
           : "Impossible d'enregistrer ce produit pour le moment.";
       setError(message);
       toast.error(message);
