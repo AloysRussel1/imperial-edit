@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, LogIn, LogOut, Store, User, UserPlus } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, ShieldCheck, Store, User, UserCircle, UserPlus } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getDjangoAdminUrl } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 
 export function AccountMenu() {
@@ -35,16 +36,11 @@ export function AccountMenu() {
           <User className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>{user ? `Bonjour, ${user.first_name || user.email}` : "Mon compte"}</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {user ? (
-          <DropdownMenuItem onSelect={handleLogout} className="flex items-center gap-2 text-red-700">
-            <LogOut className="h-4 w-4" />
-            Se déconnecter
-          </DropdownMenuItem>
-        ) : (
+        {!user ? (
           <>
             <DropdownMenuItem asChild>
               <Link href="/login" className="flex items-center gap-2">
@@ -59,22 +55,67 @@ export function AccountMenu() {
               </Link>
             </DropdownMenuItem>
           </>
-        )}
+        ) : (
+          <>
+            {/* Visible pour tout compte connecté, quel que soit son rôle. */}
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard?tab=profile" className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4" />
+                Mon profil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard?tab=orders" className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Mes commandes
+              </Link>
+            </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <LayoutDashboard className="h-4 w-4" />
-            Mes commandes &amp; sourcing
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/admin-dashboard" className="flex items-center gap-2">
-            <Store className="h-4 w-4" />
-            Tableau de bord de synthèse (démo)
-          </Link>
-        </DropdownMenuItem>
+            {user.role === "vendor" ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard?tab=vendor-products"
+                    className="flex items-center gap-2 font-medium text-imperial-gold"
+                  >
+                    <Store className="h-4 w-4" />
+                    Espace vendeur
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            ) : null}
+
+            {user.role === "admin" ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/admin-dashboard" className="flex items-center gap-2 font-medium text-imperial-gold">
+                    <ShieldCheck className="h-4 w-4" />
+                    Console admin
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={getDjangoAdminUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Backoffice Django
+                  </a>
+                </DropdownMenuItem>
+              </>
+            ) : null}
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={handleLogout} className="flex items-center gap-2 text-red-700">
+              <LogOut className="h-4 w-4" />
+              Se déconnecter
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

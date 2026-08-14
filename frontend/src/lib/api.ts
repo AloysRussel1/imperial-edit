@@ -69,6 +69,13 @@ export const apiClient = axios.create({
 // Pas de Content-Type par défaut : axios détecte automatiquement JSON (objet)
 // vs multipart/form-data (FormData, pour l'upload de photo) requête par requête.
 
+/** URL du Django Admin natif (`/admin/`), dérivée de la même base API que le
+ * reste du client (`/api` retiré, jamais recalculée séparément) — utilisée
+ * par le lien "Backoffice Django" du menu compte (réservé aux admins). */
+export function getDjangoAdminUrl(): string {
+  return `${PUBLIC_API_BASE_URL.replace(/\/api\/?$/, "")}/admin/`;
+}
+
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
