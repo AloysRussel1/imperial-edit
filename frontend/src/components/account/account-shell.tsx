@@ -2,20 +2,28 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Heart, Package, PackageSearch, Store, User } from "lucide-react";
+import { Heart, Package, PackageSearch, Search, Store, User } from "lucide-react";
 
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { FavoritesContent } from "@/components/favorites/favorites-content";
 import { ProfileTab } from "@/components/account/profile-tab";
 import { VendorOrdersTab } from "@/components/vendor/vendor-orders-tab";
 import { VendorProductsTab } from "@/components/vendor/vendor-products-tab";
+import { VendorSourcingTab } from "@/components/vendor/vendor-sourcing-tab";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
-type TabId = "orders" | "profile" | "favorites" | "vendor-products" | "vendor-orders";
+type TabId = "orders" | "profile" | "favorites" | "vendor-products" | "vendor-orders" | "vendor-sourcing";
 
-const VENDOR_ONLY_TABS: TabId[] = ["vendor-products", "vendor-orders"];
-const KNOWN_TABS: TabId[] = ["orders", "profile", "favorites", "vendor-products", "vendor-orders"];
+const VENDOR_ONLY_TABS: TabId[] = ["vendor-products", "vendor-orders", "vendor-sourcing"];
+const KNOWN_TABS: TabId[] = [
+  "orders",
+  "profile",
+  "favorites",
+  "vendor-products",
+  "vendor-orders",
+  "vendor-sourcing",
+];
 
 const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "orders", label: "Mes commandes & sourcing", icon: PackageSearch },
@@ -28,6 +36,7 @@ const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
 const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "vendor-products", label: "Catalogue Produits", icon: Store },
   { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
+  { id: "vendor-sourcing", label: "Demandes de sourcing", icon: Search },
 ];
 
 function isVendorOnlyTab(tab: string): tab is TabId {
@@ -100,6 +109,7 @@ export function AccountShell() {
             même l'instant d'un rendu avant que l'effet ne corrige `active`. */}
         {active === "vendor-products" && role === "vendor" ? <VendorProductsTab /> : null}
         {active === "vendor-orders" && role === "vendor" ? <VendorOrdersTab /> : null}
+        {active === "vendor-sourcing" && role === "vendor" ? <VendorSourcingTab /> : null}
       </div>
     </div>
   );

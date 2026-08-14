@@ -4,10 +4,10 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin
+from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin, IsVendorOrAdmin
 from apps.orders.serializers import OrderSerializer
 
-from .models import SourcingRequest
+from .models import SourcingRequest, SourcingStatus
 from .selectors import list_requests_for_customer
 from .serializers import (
     ConvertSourcingRequestSerializer,
@@ -28,6 +28,13 @@ class SourcingRequestViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.role == "admin":
             return SourcingRequest.objects.select_related("customer").order_by("-created_at")
+        if user.role == "vendor":
+            # Un vendeur ne voit que les demandes encore ouvertes (jamais celles
+            # déjà devisées/converties/refusées par l'admin ou un autre vendeur) —
+            # évite d'écraser un devis existant et une file encombrée de bruit.
+            return SourcingRequest.objects.filter(
+                status__in=[SourcingStatus.NEW, SourcingStatus.UNDER_REVIEW]
+            ).select_related("customer").order_by("created_at")
         return list_requests_for_customer(user)
 
     def get_serializer_class(self):
@@ -43,7 +50,7 @@ class SourcingRequestViewSet(viewsets.ModelViewSet):
         serializer = SourcingRequestSerializer(obj, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=["post"], permission_classes=(IsAdminRole,))
+    @action(detail=True, methods=["post"], permission_classes=(IsVendorOrAdmin,))
     def quote(self, request, pk=None):
         payload = QuoteSourcingRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
