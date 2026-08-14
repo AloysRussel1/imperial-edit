@@ -16,6 +16,7 @@ import {
   uploadVendorProductImage,
 } from "@/lib/api";
 import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
+import { toast } from "@/store/toast-store";
 import type { ProductCategory, ProductDetail, ProductType, VendorProductVariantPayload } from "@/types";
 
 function slugify(value: string): string {
@@ -93,8 +94,9 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
     try {
       await uploadVendorProductImage(product.slug, file);
       setImages((prev) => [...prev, { id: `temp-${Date.now()}`, url: URL.createObjectURL(file), alt: name }]);
+      toast.success("Photo ajoutée.");
     } catch {
-      setError("Échec de l'upload de la photo.");
+      toast.error("Échec de l'upload de la photo.");
     } finally {
       setUploadingImage(false);
     }
@@ -105,8 +107,9 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
     try {
       await deleteVendorProductImage(product.slug, imageId);
       setImages((prev) => prev.filter((img) => img.id !== imageId));
+      toast.success("Photo supprimée.");
     } catch {
-      setError("Échec de la suppression de la photo.");
+      toast.error("Échec de la suppression de la photo.");
     }
   }
 
@@ -131,11 +134,12 @@ export function VendorProductForm({ product, onSaved, onCancel }: VendorProductF
       const saved = isEdit ? await updateVendorProduct(product.slug, payload) : await createVendorProduct(payload);
       onSaved(saved);
     } catch (err) {
-      setError(
+      const message =
         err instanceof AxiosError && err.response?.status === 400
           ? "Vérifiez les champs — SKU déjà utilisé, catégorie manquante ou prix invalide."
-          : "Impossible d'enregistrer ce produit pour le moment."
-      );
+          : "Impossible d'enregistrer ce produit pour le moment.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

@@ -5,6 +5,7 @@ import { AppHydration } from "@/components/common/app-hydration";
 import { WhatsAppButton } from "@/components/common/whatsapp-button";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { Toaster } from "@/components/ui/toaster";
 
 import "./globals.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="flex-1">{children}</div>
         <Footer />
         <WhatsAppButton variant="floating" />
+        <Toaster />
       </body>
     </html>
   );
