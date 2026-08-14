@@ -30,7 +30,44 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "unit_price_xaf",
             "quantity",
             "line_total_xaf",
+            "fulfillment_status",
         )
+
+
+class VendorOrderItemSerializer(serializers.ModelSerializer):
+    """Ligne de commande vue côté vendeur : contexte commande/client, jamais
+    les autres lignes de la même commande (qui peuvent appartenir à un autre
+    vendeur) ni les montants globaux de la commande."""
+
+    order_id = serializers.UUIDField(source="order.id", read_only=True)
+    order_number = serializers.CharField(source="order.order_number", read_only=True)
+    order_created_at = serializers.DateTimeField(source="order.created_at", read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    fulfillment_status_display = serializers.CharField(source="get_fulfillment_status_display", read_only=True)
+    line_total_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = (
+            "id",
+            "order_id",
+            "order_number",
+            "order_created_at",
+            "customer_name",
+            "product_name_snapshot",
+            "sku_snapshot",
+            "unit_price_xaf",
+            "quantity",
+            "line_total_xaf",
+            "fulfillment_status",
+            "fulfillment_status_display",
+        )
+        read_only_fields = ("fulfillment_status",)  # modifié uniquement via l'action dédiée, pas un PATCH générique
+
+    def get_customer_name(self, obj: OrderItem) -> str:
+        customer = obj.order.customer
+        full_name = f"{customer.first_name} {customer.last_name}".strip()
+        return full_name or customer.email
 
 
 class OrderStatusHistorySerializer(serializers.ModelSerializer):

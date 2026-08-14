@@ -8,6 +8,9 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.orders import urls as orders_urls
+from apps.products import urls as products_urls
+
 # Jazzmin lit ses propres réglages depuis JAZZMIN_SETTINGS (core/settings/base.py),
 # mais "index_title" (l'intitulé de la page d'accueil de l'admin natif Django)
 # n'a pas d'équivalent dans ce dictionnaire : on le pose directement ici.
@@ -22,6 +25,11 @@ api_v1_patterns = [
     path("payments/", include("apps.payments.urls")),
     path("promotions/", include("apps.promotions.urls")),
     path("sourcing/", include("apps.sourcing.urls")),
+    # Espace vendeur (self-service) : CRUD sur ses propres produits + suivi de
+    # préparation de ses propres lignes de commande. Distinct des endpoints
+    # ci-dessus (catalogue public / gestion admin globale).
+    path("vendor/products/", include(products_urls.vendor_urlpatterns)),
+    path("vendor/order-items/", include(orders_urls.vendor_urlpatterns)),
 ]
 
 urlpatterns = [

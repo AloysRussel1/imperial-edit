@@ -19,3 +19,10 @@ class ReadOnlyOrAdmin(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return bool(request.user and request.user.is_authenticated and request.user.role == "admin")
+
+
+class IsVendorOrAdmin(BasePermission):
+    """Accès aux endpoints /api/vendor/* : rôle vendeur ou admin uniquement."""
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role in ("vendor", "admin"))

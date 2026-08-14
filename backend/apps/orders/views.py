@@ -1,18 +1,24 @@
 from django.core.exceptions import ValidationError
-from rest_framework import serializers, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin
+from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin, IsVendorOrAdmin
 from apps.payments.models import Transaction, TransactionStatus
 from apps.promotions.services import apply_coupon
 from apps.sourcing.selectors import list_pending_requests
 
-from .models import Cart, Order, OrderStatus
+from .models import Cart, Order, OrderItem, OrderItemFulfillmentStatus, OrderStatus
 from .selectors import dashboard_financial_summary, get_order_for_tracking, list_orders_for_customer
-from .serializers import CheckoutSerializer, CreateOrderSerializer, OrderSerializer, OrderTrackingSerializer
+from .serializers import (
+    CheckoutSerializer,
+    CreateOrderSerializer,
+    OrderSerializer,
+    OrderTrackingSerializer,
+    VendorOrderItemSerializer,
+)
 from .services import (
     advance_logistics_status,
     cancel_order,
@@ -190,3 +196,38 @@ class AdminDashboardSummaryView(APIView):
                 "pending_sourcing_count": list_pending_requests().count(),
             }
         )
+
+
+class VendorOrderItemViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    Lignes de commande à préparer pour le vendeur connecté — jamais la
+    commande entière (qui peut mélanger les articles de plusieurs vendeurs),
+    seulement ses propres lignes. Un admin voit toutes les lignes de toute la
+    plateforme, comme partout ailleurs.
+    """
+
+    serializer_class = VendorOrderItemSerializer
+    permission_classes = (IsAuthenticated, IsVendorOrAdmin)
+
+    def get_queryset(self):
+        base = (
+            OrderItem.objects.select_related("order", "order__customer", "variant", "variant__product")
+            .order_by("-order__created_at")
+        )
+        user = self.request.user
+        if user.role == "admin":
+            return base
+        return base.filter(variant__product__vendor=user)
+
+    @action(detail=True, methods=["post"], url_path="update-fulfillment")
+    def update_fulfillment(self, request, pk=None):
+        item = self.get_object()
+        new_status = request.data.get("fulfillment_status")
+        if new_status not in OrderItemFulfillmentStatus.values:
+            return Response(
+                {"detail": f"Statut invalide. Valeurs possibles : {', '.join(OrderItemFulfillmentStatus.values)}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        item.fulfillment_status = new_status
+        item.save(update_fields=["fulfillment_status"])
+        return Response(VendorOrderItemSerializer(item).data)

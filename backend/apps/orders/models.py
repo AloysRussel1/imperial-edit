@@ -107,6 +107,12 @@ class Order(BaseModel):
         return round((TRACKING_MILESTONES.index(self.status) + 1) / len(TRACKING_MILESTONES) * 100)
 
 
+class OrderItemFulfillmentStatus(models.TextChoices):
+    PENDING = "pending", "En attente"
+    PREPARING = "preparing", "En préparation"
+    SHIPPED = "shipped", "Expédié"
+
+
 class OrderItem(BaseModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name="order_items")
@@ -114,6 +120,14 @@ class OrderItem(BaseModel):
     sku_snapshot = models.CharField(max_length=64)
     unit_price_xaf = models.DecimalField(max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    # Statut de préparation côté vendeur, distinct du statut global de la
+    # commande (Order.status, piloté par record_status_change()) : une
+    # commande peut mélanger des articles de plusieurs vendeurs, chacun ne
+    # devant contrôler que la préparation de SES propres lignes, jamais
+    # l'état d'ensemble de la commande (paiement, livraison finale...).
+    fulfillment_status = models.CharField(
+        max_length=20, choices=OrderItemFulfillmentStatus.choices, default=OrderItemFulfillmentStatus.PENDING
+    )
 
     class Meta:
         db_table = "order_items"

@@ -284,3 +284,46 @@ export interface AdminDashboardSummary {
   active_orders_count: number;
   pending_sourcing_count: number;
 }
+
+// ---- Espace vendeur ----
+
+export type FulfillmentStatus = "pending" | "preparing" | "shipped";
+
+export interface VendorProductVariantPayload {
+  id?: string;
+  sku: string;
+  size: string;
+  color: string;
+  price_override_xaf?: number | null;
+  stock_quantity: number;
+}
+
+export interface VendorProductPayload {
+  name: string;
+  slug: string;
+  product_type: ProductType;
+  brand: string;
+  description: string;
+  category: string;
+  base_price_xaf: number;
+  compare_at_price_xaf?: number | null;
+  is_active: boolean;
+  is_featured?: boolean;
+  default_deposit_percentage: DepositPercentage;
+  variants?: VendorProductVariantPayload[];
+}
+
+export interface ApiVendorOrderItem {
+  id: string;
+  order_id: string;
+  order_number: string;
+  order_created_at: string;
+  customer_name: string;
+  product_name_snapshot: string;
+  sku_snapshot: string;
+  unit_price_xaf: string;
+  quantity: number;
+  line_total_xaf: string;
+  fulfillment_status: FulfillmentStatus;
+  fulfillment_status_display: string;
+}

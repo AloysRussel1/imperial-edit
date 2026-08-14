@@ -11,13 +11,17 @@ import type {
   ApiSourcingRequest,
   ApiTransaction,
   ApiUser,
+  ApiVendorOrderItem,
   AuthTokens,
   CheckoutPayload,
+  FulfillmentStatus,
   InitiatePaymentPayload,
   LoginPayload,
   ProductAvailability,
+  ProductCategory,
   ProductDetail,
   RegisterPayload,
+  VendorProductPayload,
 } from "@/types";
 
 // Toutes les routes de l'API Django vivent sous le préfixe `/api/`
@@ -198,6 +202,11 @@ function mapApiProduct(product: ApiProduct): ProductDetail {
 export async function fetchProducts(): Promise<ProductDetail[]> {
   const { data } = await apiClient.get<{ results: ApiProduct[] }>("/products/");
   return data.results.map(mapApiProduct);
+}
+
+export async function fetchCategories(): Promise<ProductCategory[]> {
+  const { data } = await apiClient.get<{ results: ProductCategory[] }>("/products/categories/");
+  return data.results;
 }
 
 export async function fetchProductBySlug(slug: string): Promise<ProductDetail | null> {
@@ -397,6 +406,54 @@ export async function quoteSourcingRequest(
 export async function rejectSourcingRequest(id: string, adminNotes: string): Promise<ApiSourcingRequest> {
   const { data } = await apiClient.post<ApiSourcingRequest>(`/sourcing/requests/${id}/reject/`, {
     admin_notes: adminNotes,
+  });
+  return data;
+}
+
+// ---- Espace vendeur (self-service sur ses propres produits/commandes) ----
+
+export async function fetchVendorProducts(): Promise<ProductDetail[]> {
+  const { data } = await apiClient.get<{ results: ApiProduct[] }>("/vendor/products/");
+  return data.results.map(mapApiProduct);
+}
+
+export async function createVendorProduct(payload: VendorProductPayload): Promise<ProductDetail> {
+  const { data } = await apiClient.post<ApiProduct>("/vendor/products/", payload);
+  return mapApiProduct(data);
+}
+
+export async function updateVendorProduct(slug: string, payload: VendorProductPayload): Promise<ProductDetail> {
+  const { data } = await apiClient.patch<ApiProduct>(`/vendor/products/${slug}/`, payload);
+  return mapApiProduct(data);
+}
+
+/** Désactive le produit (la suppression réelle est bloquée côté backend dès
+ * qu'une variante a un historique de commande — voir VendorProductViewSet). */
+export async function deleteVendorProduct(slug: string): Promise<void> {
+  await apiClient.delete(`/vendor/products/${slug}/`);
+}
+
+export async function uploadVendorProductImage(slug: string, file: File): Promise<void> {
+  const form = new FormData();
+  form.append("image", file);
+  await apiClient.post(`/vendor/products/${slug}/images/`, form);
+}
+
+export async function deleteVendorProductImage(slug: string, imageId: string): Promise<void> {
+  await apiClient.delete(`/vendor/products/${slug}/images/${imageId}/`);
+}
+
+export async function fetchVendorOrderItems(): Promise<ApiVendorOrderItem[]> {
+  const { data } = await apiClient.get<{ results: ApiVendorOrderItem[] }>("/vendor/order-items/");
+  return data.results;
+}
+
+export async function updateVendorOrderItemFulfillment(
+  itemId: string,
+  status: FulfillmentStatus
+): Promise<ApiVendorOrderItem> {
+  const { data } = await apiClient.post<ApiVendorOrderItem>(`/vendor/order-items/${itemId}/update-fulfillment/`, {
+    fulfillment_status: status,
   });
   return data;
 }

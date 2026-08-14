@@ -1,28 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, PackageSearch, User } from "lucide-react";
+import { Heart, Package, PackageSearch, Store, User } from "lucide-react";
 
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { FavoritesContent } from "@/components/favorites/favorites-content";
 import { ProfileTab } from "@/components/account/profile-tab";
+import { VendorOrdersTab } from "@/components/vendor/vendor-orders-tab";
+import { VendorProductsTab } from "@/components/vendor/vendor-products-tab";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth-store";
 
-type TabId = "orders" | "profile" | "favorites";
+type TabId = "orders" | "profile" | "favorites" | "vendor-products" | "vendor-orders";
 
-const TABS: { id: TabId; label: string; icon: typeof User }[] = [
+const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "orders", label: "Mes commandes & sourcing", icon: PackageSearch },
   { id: "profile", label: "Profil", icon: User },
   { id: "favorites", label: "Mes favoris", icon: Heart },
 ];
 
+// Réservé au rôle vendeur : un admin gère déjà l'ensemble du catalogue et de
+// toutes les commandes via /admin-dashboard, plus complet — pas de doublon ici.
+const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
+  { id: "vendor-products", label: "Mes produits", icon: Store },
+  { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
+];
+
 export function AccountShell() {
   const [active, setActive] = useState<TabId>("orders");
+  const role = useAuthStore((state) => state.user?.role);
+  const tabs = role === "vendor" ? [...BASE_TABS, ...VENDOR_TABS] : BASE_TABS;
 
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
       <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -45,6 +57,8 @@ export function AccountShell() {
         {active === "orders" ? <CustomerDashboard /> : null}
         {active === "profile" ? <ProfileTab /> : null}
         {active === "favorites" ? <FavoritesContent /> : null}
+        {active === "vendor-products" && role === "vendor" ? <VendorProductsTab /> : null}
+        {active === "vendor-orders" && role === "vendor" ? <VendorOrdersTab /> : null}
       </div>
     </div>
   );
