@@ -22,6 +22,7 @@ import type {
   ProductDetail,
   RegisterPayload,
   VendorProductPayload,
+  VerifyEmailPayload,
 } from "@/types";
 
 // Toutes les routes de l'API Django vivent sous le préfixe `/api/`
@@ -230,11 +231,12 @@ export async function fetchProductBySlug(slug: string): Promise<ProductDetail | 
 
 // ---- Authentification ----
 
-export async function registerAccount(payload: RegisterPayload): Promise<{ tokens: AuthTokens; user: ApiUser }> {
+export async function registerAccount(payload: RegisterPayload): Promise<void> {
+  // Le compte est créé inactif côté backend (voir RegisterSerializer.create)
+  // tant que le code OTP envoyé par e-mail n'a pas été validé — pas de
+  // session à ouvrir ici, l'appelant doit rediriger vers l'écran de saisie
+  // du code (voir verifyEmailOtp), qui renvoie lui la session JWT.
   await apiClient.post("/auth/register/", payload);
-  // L'inscription ne renvoie pas de session : on enchaîne avec une connexion
-  // immédiate pour offrir une expérience "inscription = déjà connecté".
-  return loginAccount({ email: payload.email, password: payload.password });
 }
 
 export async function loginAccount(payload: LoginPayload): Promise<{ tokens: AuthTokens; user: ApiUser }> {
@@ -246,6 +248,19 @@ export async function loginAccount(payload: LoginPayload): Promise<{ tokens: Aut
     headers: { Authorization: `Bearer ${tokens.access}` },
   });
   return { tokens, user };
+}
+
+export async function verifyEmailOtp(payload: VerifyEmailPayload): Promise<{ tokens: AuthTokens; user: ApiUser }> {
+  const { data: tokens } = await apiClient.post<AuthTokens>("/auth/verify-email/", payload);
+  const { data: user } = await apiClient.get<ApiUser>("/auth/me/", {
+    headers: { Authorization: `Bearer ${tokens.access}` },
+  });
+  return { tokens, user };
+}
+
+export async function resendVerificationOtp(email: string): Promise<{ detail: string }> {
+  const { data } = await apiClient.post<{ detail: string }>("/auth/resend-otp/", { email });
+  return data;
 }
 
 /**

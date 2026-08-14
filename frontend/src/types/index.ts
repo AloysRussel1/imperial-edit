@@ -74,6 +74,9 @@ export type PaymentMethod = "mtn_momo" | "orange_money" | "card";
 // ---- Formes brutes renvoyées par l'API Django (avant adaptation côté frontend) ----
 
 export type UserRole = "admin" | "vendor" | "customer";
+/** Rôles réellement sélectionnables à l'inscription — jamais "admin", qui ne
+ * doit pouvoir être atteint que par une promotion manuelle côté backoffice. */
+export type RegistrableRole = "customer" | "vendor";
 
 export interface ApiUser {
   id: string;
@@ -100,11 +103,17 @@ export interface RegisterPayload {
   phone_number?: string;
   whatsapp_number?: string;
   city?: string;
+  role: RegistrableRole;
 }
 
 export interface LoginPayload {
   email: string;
   password: string;
+}
+
+export interface VerifyEmailPayload {
+  email: string;
+  code: string;
 }
 
 export interface ApiProductImage {

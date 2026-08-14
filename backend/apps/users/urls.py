@@ -7,12 +7,16 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegisterView,
+    ResendOTPView,
+    VerifyEmailView,
 )
 
 app_name = "users"
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
+    path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),
+    path("resend-otp/", ResendOTPView.as_view(), name="resend-otp"),
     path("login/", ImperialTokenObtainPairView.as_view(), name="login"),
     path("refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("me/", MeView.as_view(), name="me"),

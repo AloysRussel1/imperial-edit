@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { loginAccount, registerAccount } from "@/lib/api";
-import type { ApiUser, LoginPayload, RegisterPayload } from "@/types";
+import { loginAccount, registerAccount, verifyEmailOtp } from "@/lib/api";
+import type { ApiUser, LoginPayload, RegisterPayload, VerifyEmailPayload } from "@/types";
 
 interface AuthState {
   accessToken: string | null;
@@ -10,7 +10,11 @@ interface AuthState {
   user: ApiUser | null;
   _hasHydrated: boolean;
   login: (payload: LoginPayload) => Promise<void>;
+  /** Crée le compte (inactif tant que l'e-mail n'est pas vérifié) — n'ouvre
+   * pas de session, voir verifyEmail. */
   register: (payload: RegisterPayload) => Promise<void>;
+  /** Valide le code OTP et ouvre la session, comme login(). */
+  verifyEmail: (payload: VerifyEmailPayload) => Promise<void>;
   logout: () => void;
   setAccessToken: (token: string) => void;
   setUser: (user: ApiUser) => void;
@@ -36,7 +40,10 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: tokens.access, refreshToken: tokens.refresh, user });
       },
       register: async (payload) => {
-        const { tokens, user } = await registerAccount(payload);
+        await registerAccount(payload);
+      },
+      verifyEmail: async (payload) => {
+        const { tokens, user } = await verifyEmailOtp(payload);
         set({ accessToken: tokens.access, refreshToken: tokens.refresh, user });
       },
       logout: () => set({ accessToken: null, refreshToken: null, user: null }),

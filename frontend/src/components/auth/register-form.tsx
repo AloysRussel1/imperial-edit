@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { ShoppingBag, Store, UserPlus } from "lucide-react";
 import { AxiosError } from "axios";
 
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import type { RegistrableRole } from "@/types";
+
+const ROLE_OPTIONS: { value: RegistrableRole; label: string; description: string; icon: typeof ShoppingBag }[] = [
+  { value: "customer", label: "Compte Acheteur", description: "Parcourir et commander", icon: ShoppingBag },
+  { value: "vendor", label: "Compte Vendeur", description: "Vendre mes produits", icon: Store },
+];
 
 export function RegisterForm() {
   const router = useRouter();
   const register = useAuthStore((state) => state.register);
 
+  const [role, setRole] = useState<RegistrableRole>("customer");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,8 +55,11 @@ export function RegisterForm() {
         last_name: lastName,
         whatsapp_number: whatsapp,
         city,
+        role,
       });
-      router.push("/dashboard");
+      // Le compte reste inactif tant que le code reçu par e-mail n'a pas été
+      // saisi (voir VerifyEmailForm) — pas de session ouverte ici.
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       if (err instanceof AxiosError && err.response?.data) {
         const firstMessage = Object.values(err.response.data).flat()[0];
@@ -63,6 +74,33 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-imperial-black/10 bg-white p-6">
+      <div className="space-y-1.5">
+        <Label>Type de compte</Label>
+        <div className="grid grid-cols-2 gap-3">
+          {ROLE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setRole(option.value)}
+              aria-pressed={role === option.value}
+              className={cn(
+                "flex flex-col items-center gap-1.5 rounded-lg border-2 px-3 py-3.5 text-center transition-colors",
+                role === option.value
+                  ? "border-imperial-gold bg-imperial-gold/10"
+                  : "border-imperial-black/10 hover:border-imperial-black/25"
+              )}
+            >
+              <option.icon
+                className={cn("h-5 w-5", role === option.value ? "text-imperial-gold" : "text-imperial-black/50")}
+                strokeWidth={1.5}
+              />
+              <span className="text-sm font-medium text-imperial-black">{option.label}</span>
+              <span className="text-xs text-imperial-black/50">{option.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="register-first-name">Prénom</Label>

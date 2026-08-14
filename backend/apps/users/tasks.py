@@ -24,3 +24,28 @@ def send_password_reset_email(user_email: str, reset_url: str) -> None:
         template_name="password_reset",
         context={"reset_url": reset_url},
     )
+
+
+@shared_task
+def send_otp_email(user_email: str, first_name: str, code: str) -> None:
+    from django.template.loader import render_to_string
+    from django.utils import timezone
+
+    from apps.notifications.services import send_brevo_email
+    from apps.users.models import EmailVerificationOTP
+
+    html_content = render_to_string(
+        "emails/otp_verification.html",
+        {
+            "first_name": first_name or user_email,
+            "code": code,
+            "validity_minutes": EmailVerificationOTP.VALIDITY_MINUTES,
+            "year": timezone.now().year,
+        },
+    )
+    send_brevo_email(
+        to_email=user_email,
+        to_name=first_name or user_email,
+        subject="Votre code de vérification — Imperial Collection",
+        html_content=html_content,
+    )

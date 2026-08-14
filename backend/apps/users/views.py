@@ -6,24 +6,38 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import User
+from .models import EmailVerificationOTP, User
 from .serializers import (
     ImperialTokenObtainPairSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
+    ResendOTPSerializer,
     UserSerializer,
+    VerifyEmailSerializer,
 )
-from .tasks import send_password_reset_email, send_welcome_email
+from .tasks import send_otp_email, send_password_reset_email, send_welcome_email
 
 logger = logging.getLogger(__name__)
 
 
 class ImperialTokenObtainPairView(TokenObtainPairView):
     serializer_class = ImperialTokenObtainPairSerializer
+
+
+def _issue_otp(user: User) -> None:
+    otp = EmailVerificationOTP.objects.create(user=user)
+    # Même filet que send_welcome_email : un échec d'envoi (SMTP/API en
+    # panne, mauvaise config) ne doit jamais faire échouer l'inscription
+    # elle-même — le compte existe déjà en base à ce stade.
+    try:
+        send_otp_email.delay(user.email, user.first_name, otp.code)
+    except Exception:
+        logger.exception("Échec de l'envoi du code de vérification à %s", user.email)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -33,16 +47,58 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
-        # CELERY_TASK_ALWAYS_EAGER (Render, plan gratuit) exécute `.delay()` de
-        # façon synchrone, avec propagation des exceptions (voir
-        # settings/production.py) : sans ce filet, un e-mail de bienvenue en
-        # échec (SMTP, template...) ferait échouer toute l'inscription alors
-        # que le compte a déjà été créé en base — c'était la cause du "Inscription
-        # impossible pour le moment" en production malgré un compte bien créé.
         try:
             send_welcome_email.delay(user.email, user.first_name)
         except Exception:
             logger.exception("Échec de l'envoi de l'e-mail de bienvenue à %s", user.email)
+        _issue_otp(user)
+
+
+class VerifyEmailView(APIView):
+    """Active le compte (is_active=True) une fois le code OTP validé, et
+    renvoie directement une session JWT — l'inscription redevient "inscription
+    = déjà connecté" dès que l'adresse est confirmée, sans étape de login
+    supplémentaire côté client."""
+
+    permission_classes = (permissions.AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "otp-verify"
+
+    def post(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        refresh_token = ImperialTokenObtainPairSerializer.get_token(user)
+        return Response(
+            {
+                "detail": "Adresse e-mail vérifiée avec succès.",
+                "access": str(refresh_token.access_token),
+                "refresh": str(refresh_token),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResendOTPView(APIView):
+    """Réponse volontairement générique (jamais de 404/400 révélant qu'un
+    compte n'existe pas) — seul le cooldown/l'e-mail déjà vérifié remontent
+    une erreur, car ce sont des cas où l'utilisateur agit sur SON PROPRE
+    compte et a donc déjà légitimement connaissance de son état."""
+
+    permission_classes = (permissions.AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "otp-resend"
+
+    def post(self, request):
+        serializer = ResendOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = User.objects.filter(email__iexact=serializer.validated_data["email"]).first()
+        if user is not None and not user.is_email_verified:
+            _issue_otp(user)
+
+        return Response({"detail": "Un nouveau code de vérification vient d'être envoyé."})
 
 
 class MeView(generics.RetrieveUpdateAPIView):

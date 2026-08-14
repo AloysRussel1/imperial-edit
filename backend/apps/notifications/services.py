@@ -99,6 +99,70 @@ def send_whatsapp_message(to_number: str, message: str, *, order=None, sourcing_
     return True
 
 
+def send_brevo_email(*, to_email: str, to_name: str, subject: str, html_content: str) -> bool:
+    """
+    Envoie un e-mail transactionnel via l'API HTTP v3 de Brevo (et non le
+    relais SMTP déjà utilisé par `send_template_email`) — utilisée pour le
+    code de vérification OTP à l'inscription, où la livraison quasi
+    instantanée que permet l'API prime sur la simplicité du SMTP générique.
+
+    Tant que BREVO_API_KEY n'est pas configurée (pas de compte Brevo réel en
+    développement), l'envoi est simplement journalisé — même logique de
+    repli « sandbox » que send_whatsapp_message/CinetPay.
+    """
+    if not to_email:
+        _log(channel=NotificationChannel.EMAIL, recipient="", subject=subject, message="", status=NotificationStatus.SKIPPED)
+        return False
+
+    if not settings.BREVO_API_KEY:
+        logger.info("[Brevo - sandbox, API non configurée] -> %s: %s", to_email, subject)
+        _log(
+            channel=NotificationChannel.EMAIL,
+            recipient=to_email,
+            subject=subject,
+            message=strip_tags(html_content),
+            status=NotificationStatus.SKIPPED,
+        )
+        return False
+
+    try:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": settings.BREVO_API_KEY,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "sender": {"name": settings.BREVO_SENDER_NAME, "email": settings.BREVO_SENDER_EMAIL},
+                "to": [{"email": to_email, "name": to_name or to_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        logger.exception("Échec de l'envoi Brevo vers %s", to_email)
+        _log(
+            channel=NotificationChannel.EMAIL,
+            recipient=to_email,
+            subject=subject,
+            message=strip_tags(html_content),
+            status=NotificationStatus.FAILED,
+        )
+        return False
+
+    _log(
+        channel=NotificationChannel.EMAIL,
+        recipient=to_email,
+        subject=subject,
+        message=strip_tags(html_content),
+        status=NotificationStatus.SENT,
+    )
+    return True
+
+
 def send_template_email(
     *, to_email: str, subject: str, template_name: str, context: dict, order=None, sourcing_request=None
 ) -> bool:

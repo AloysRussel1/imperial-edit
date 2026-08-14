@@ -123,6 +123,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.DefaultPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Limites dédiées (appliquées explicitement via throttle_scope, pas de
+    # DEFAULT_THROTTLE_CLASSES global) : un code OTP à 6 chiffres n'offre que
+    # 10^6 combinaisons, un endpoint non limité en débit serait bruteforçable.
+    "DEFAULT_THROTTLE_RATES": {
+        "otp-verify": "10/min",
+        "otp-resend": "5/min",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -184,6 +191,15 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env(
     "DEFAULT_FROM_EMAIL", default="Imperial Collection <notifications@imperialcollection.com>"
 )
+
+# ==== Brevo (API transactionnelle — code de vérification OTP à l'inscription) ====
+# Distinct du relais SMTP ci-dessus : appelée en HTTP direct (voir
+# apps.notifications.services.send_brevo_email), vide par défaut avec le
+# même repli "sandbox" (journalisation sans appel réseau) que les autres
+# intégrations tierces de ce projet.
+BREVO_API_KEY = env("BREVO_API_KEY", default="")
+BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL", default="notifications@imperialcollection.com")
+BREVO_SENDER_NAME = env("BREVO_SENDER_NAME", default="Imperial Collection")
 
 # ==== Frontend (liens embarqués dans les e-mails transactionnels) ====
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
