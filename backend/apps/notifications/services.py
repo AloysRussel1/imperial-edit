@@ -1,4 +1,5 @@
 import logging
+from email.utils import parseaddr
 
 import requests
 from django.conf import settings
@@ -125,6 +126,22 @@ def send_brevo_email(*, to_email: str, to_name: str, subject: str, html_content:
         )
         return False
 
+    # BREVO_SENDER_EMAIL (dédié, adresse nue) en priorité ; à défaut,
+    # DEFAULT_FROM_EMAIL — potentiellement au format Django "Nom <email>",
+    # d'où le passage par parseaddr : l'API Brevo attend une adresse nue
+    # dans sender.email (le nom est un champ JSON séparé), un format brut
+    # "Nom <email>" y ferait échouer silencieusement l'envoi.
+    fallback_name, fallback_email = parseaddr(settings.DEFAULT_FROM_EMAIL)
+    sender_email = settings.BREVO_SENDER_EMAIL or fallback_email or "noreply@imperialedit.com"
+    sender_name = settings.BREVO_SENDER_NAME or fallback_name or "The Imperial Collection"
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email, "name": to_name or to_email}],
+        "subject": subject,
+        "htmlContent": html_content,
+    }
+
     try:
         response = requests.post(
             "https://api.brevo.com/v3/smtp/email",
@@ -133,14 +150,27 @@ def send_brevo_email(*, to_email: str, to_name: str, subject: str, html_content:
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             },
-            json={
-                "sender": {"name": settings.BREVO_SENDER_NAME, "email": settings.BREVO_SENDER_EMAIL},
-                "to": [{"email": to_email, "name": to_name or to_email}],
-                "subject": subject,
-                "htmlContent": html_content,
-            },
+            json=payload,
             timeout=15,
         )
+        if response.status_code >= 400:
+            # En warning, pas en info : ce projet n'a aucune config LOGGING
+            # explicite, donc le niveau effectif est WARNING sans aucun
+            # handler — un logger.info() ici serait silencieusement avalé et
+            # n'apparaîtrait JAMAIS dans les logs Render, rendant ce
+            # diagnostic inutile. Le corps de la réponse Brevo (ex.
+            # {"code": "unauthorized", "message": "Key not found"} pour une
+            # clé invalide, ou un message dédié pour un expéditeur/domaine
+            # pas encore vérifié — la cause la plus fréquente) est la seule
+            # façon de savoir POURQUOI Brevo refuse l'envoi, qu'une simple
+            # exception HTTPError générique ne révèle jamais.
+            logger.warning(
+                "[Brevo] POST /smtp/email vers %s (expéditeur %s) -> HTTP %s : %s",
+                to_email,
+                sender_email,
+                response.status_code,
+                response.text[:500],
+            )
         response.raise_for_status()
     except Exception:
         # Volontairement large (pas juste requests.RequestException) : cette

@@ -189,7 +189,7 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL", default="Imperial Collection <notifications@imperialcollection.com>"
+    "DEFAULT_FROM_EMAIL", default="Imperial Collection <notifications@imperialedit.com>"
 )
 
 # ==== Brevo (API transactionnelle — code de vérification OTP à l'inscription) ====
@@ -197,8 +197,13 @@ DEFAULT_FROM_EMAIL = env(
 # apps.notifications.services.send_brevo_email), vide par défaut avec le
 # même repli "sandbox" (journalisation sans appel réseau) que les autres
 # intégrations tierces de ce projet.
+# IMPORTANT : BREVO_SENDER_EMAIL doit correspondre à un expéditeur (ou à un
+# domaine) explicitement vérifié dans le compte Brevo — https://app.brevo.com
+# > Expéditeurs, domaines & dédiée > Expéditeurs. Une adresse non vérifiée
+# fait échouer silencieusement l'envoi côté Brevo (voir send_brevo_email, qui
+# journalise désormais le corps exact de la réponse pour diagnostiquer ce cas).
 BREVO_API_KEY = env("BREVO_API_KEY", default="")
-BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL", default="notifications@imperialcollection.com")
+BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL", default="notifications@imperialedit.com")
 BREVO_SENDER_NAME = env("BREVO_SENDER_NAME", default="Imperial Collection")
 
 # ==== Frontend (liens embarqués dans les e-mails transactionnels) ====
