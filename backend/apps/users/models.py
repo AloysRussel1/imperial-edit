@@ -23,3 +23,13 @@ class User(UUIDModel, AbstractUser):
     @property
     def is_admin_role(self) -> bool:
         return self.role == UserRole.ADMIN
+
+    def save(self, *args, **kwargs):
+        # Droits cumulatifs : un compte promu role="admin" (ex. depuis le
+        # formulaire UserAdmin, où `role` et `is_staff` sont deux champs
+        # distincts qu'il est facile de ne pas cocher ensemble) doit toujours
+        # pouvoir se connecter à /admin/ — jamais un lien "Administration
+        # Django" qui mène à une impasse pour un admin légitime.
+        if self.role == UserRole.ADMIN:
+            self.is_staff = True
+        super().save(*args, **kwargs)

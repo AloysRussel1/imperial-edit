@@ -149,6 +149,114 @@ textarea {
   color: var(--ie-ink) !important;
 }
 
+/* Fil d'Ariane : îlot sombre (#444 du thème Bootswatch "darkly") livré tel
+   quel sur le fond ivoire — remis en cohérence plutôt que laissé flottant. */
+.breadcrumb {
+  background-color: transparent !important;
+  padding-left: 0 !important;
+}
+
+.breadcrumb-item,
+.breadcrumb-item.active {
+  color: var(--ie-ink-soft) !important;
+}
+
+.breadcrumb-item a {
+  color: var(--ie-bronze) !important;
+}
+
+/* Fenêtres modales (FK "+", "related_modal_active") : fond #303030 du thème
+   sombre par défaut — texte de la page (forcé sombre ci-dessus) y devenait
+   illisible. Repeint en blanc, comme les cartes. */
+.modal-content {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+  border-color: var(--ie-border) !important;
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--ie-border) !important;
+}
+
+.modal-header .close {
+  color: var(--ie-ink) !important;
+  opacity: 0.6;
+  text-shadow: none !important;
+}
+
+.modal-header .close:hover {
+  opacity: 1;
+}
+
+/* Pagination des listes : blanc sur vert par défaut (couleur "success" du
+   thème), harmonisée avec les boutons or/noir du reste de l'interface. */
+.page-link {
+  background-color: var(--ie-white) !important;
+  border: 1px solid var(--ie-border) !important;
+  color: var(--ie-ink) !important;
+}
+
+.page-link:hover {
+  background-color: var(--ie-charcoal) !important;
+  border-color: var(--ie-charcoal) !important;
+  color: var(--ie-ivory) !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--ie-gold) !important;
+  border-color: var(--ie-gold) !important;
+  color: var(--ie-black) !important;
+}
+
+/* Fil "Actions récentes" du tableau de bord : bloc sombre auto-suffisant
+   (#343a40/blanc) mais îlot visuel incohérent sur le reste, désormais clair. */
+.timeline-item {
+  background-color: var(--ie-white) !important;
+  color: var(--ie-ink) !important;
+  border-color: var(--ie-border) !important;
+}
+
+.timeline-header {
+  color: var(--ie-ink) !important;
+  border-color: var(--ie-border) !important;
+}
+
+.timeline-header .mini.quiet,
+.timeline .time {
+  color: var(--ie-ink-soft) !important;
+}
+
+/*
+ * Filet de sécurité contraste : toute la zone de contenu (hors sidebar,
+ * navbar, boutons et badges — gérés explicitement plus haut/bas avec leur
+ * propre couple fond/texte) doit afficher du texte sombre sur fond clair.
+ * Placé avant la section Boutons ci-dessous pour qu'à spécificité égale,
+ * les règles .btn-* déclarées plus loin dans ce fichier gardent la main.
+ */
+.content-wrapper h1,
+.content-wrapper h2,
+.content-wrapper h3,
+.content-wrapper h4,
+.content-wrapper h5,
+.content-wrapper h6,
+.content-wrapper p,
+.content-wrapper span,
+.content-wrapper label,
+.content-wrapper li,
+.content-wrapper td,
+.content-wrapper th,
+.content-wrapper .help-block,
+.content-wrapper .errorlist {
+  color: var(--ie-ink) !important;
+}
+
+.content-header .content-title,
+.content-header h1 {
+  color: var(--ie-ink) !important;
+  font-family: var(--font-display, "Georgia", serif);
+}
+
 /* ---------------------------------------------------------------------- */
 /* 3. Sidebar gauche : noir profond, texte doré au survol/actif           */
 /* ---------------------------------------------------------------------- */
@@ -238,7 +346,7 @@ body.theme-darkly,
   letter-spacing: 0.01em;
 }
 
-/* Action principale (Ajouter, Enregistrer) : fond or, texte sombre. */
+/* Action principale (Ajouter, Enregistrer) : fond or, texte sombre bien gras. */
 .btn-warning,
 .btn-success,
 .btn-primary,
@@ -246,6 +354,7 @@ body.theme-darkly,
   background-color: var(--ie-gold) !important;
   border-color: var(--ie-gold) !important;
   color: var(--ie-black) !important;
+  font-weight: 700 !important;
 }
 
 .btn-warning:hover,
