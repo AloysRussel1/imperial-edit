@@ -4,7 +4,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from apps.common.permissions import IsVendorOrAdmin, ReadOnlyOrAdmin
+from apps.common.permissions import IsVendorReadOnlyAdminWrite, ReadOnlyOrAdmin
 
 from .models import Category, Product, ProductImage
 from .serializers import CategorySerializer, ProductDetailSerializer, ProductImageSerializer, VendorProductWriteSerializer
@@ -46,28 +46,31 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 class VendorProductViewSet(viewsets.ModelViewSet):
     """
-    CRUD self-service pour un vendeur sur SES PROPRES produits — un admin y a
-    accès à l'ensemble du catalogue (comme partout ailleurs), un vendeur
-    uniquement à ce qui lui est rattaché (Product.vendor).
+    Boutique de Yaoundé (une seule boutique, plus une place de marché
+    multi-vendeurs) : ce catalogue est désormais commun à tout le monde.
+    Le personnel de caisse (role="vendor") y a un accès en LECTURE SEULE —
+    consulter stocks/prix pendant un encaissement (voir aussi le module
+    Caisse, /api/orders/pos/) — jamais en écriture ; seule la propriétaire
+    (role="admin") crée/modifie/supprime des produits. Voir
+    IsVendorReadOnlyAdminWrite pour l'application stricte de cette règle.
     """
 
     serializer_class = VendorProductWriteSerializer
-    permission_classes = (IsAuthenticated, IsVendorOrAdmin)
+    permission_classes = (IsAuthenticated, IsVendorReadOnlyAdminWrite)
     lookup_field = "slug"
 
     def get_queryset(self):
-        base = Product.objects.select_related("category", "vendor").prefetch_related("images", "variants")
-        user = self.request.user
-        if user.role == "admin":
-            return base
-        return base.filter(vendor=user)
+        # Plus de filtre par vendeur : catalogue unique, entièrement visible
+        # en lecture par le personnel de caisse comme par l'admin — seule la
+        # capacité d'écriture distingue les deux rôles désormais.
+        return Product.objects.select_related("category", "vendor").prefetch_related("images", "variants")
 
     def perform_create(self, serializer):
-        user = self.request.user
-        # Un vendeur ne peut créer que pour lui-même ; un admin peut, en
-        # théorie, créer pour un vendeur précis via un futur formulaire admin
-        # (non exposé côté vendeur), mais par défaut se l'attribue aussi.
-        serializer.save(vendor=user)
+        # Seul un admin atteint ce point (IsVendorReadOnlyAdminWrite bloque
+        # l'écriture au personnel de caisse) — le produit lui est rattaché
+        # par défaut, `Product.vendor` restant informatif dans une boutique
+        # à propriétaire unique plutôt qu'une place de marché multi-vendeurs.
+        serializer.save(vendor=self.request.user)
 
     def perform_destroy(self, instance):
         # Suppression réelle bloquée dès qu'une variante a été commandée

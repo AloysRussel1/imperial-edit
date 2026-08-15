@@ -37,3 +37,22 @@
     text-wrap: balance;
   }
 }
+
+/* Impression du reçu de caisse (module POS) : masque tout le reste de la
+   page (navigation du tableau de bord, boutons d'action) pour n'imprimer
+   que le reçu lui-même. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #pos-receipt-print,
+  #pos-receipt-print * {
+    visibility: visible;
+  }
+  #pos-receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

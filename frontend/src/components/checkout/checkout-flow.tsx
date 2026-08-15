@@ -19,9 +19,14 @@ import { DELIVERY_LOCATIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { cartTotalXaf, useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
-import type { ApiOrder, ApiTransaction, DepositPercentage, PaymentMethod } from "@/types";
+import type { ApiOrder, ApiTransaction, DepositPercentage } from "@/types";
 
 type PaymentPlan = "deposit50" | "deposit70" | "full";
+
+/** Tunnel en ligne : jamais "espèces" ici, qui n'a de sens qu'au comptoir
+ * (module Caisse) — voir VendorPosTab. Reflète les choix acceptés par
+ * CheckoutSerializer côté backend. */
+type OnlinePaymentMethod = "mtn_momo" | "orange_money" | "card";
 
 const PLAN_TO_PERCENTAGE: Record<PaymentPlan, DepositPercentage | 100> = {
   deposit50: 50,
@@ -36,7 +41,7 @@ function wait(ms: number) {
 export function CheckoutFlow() {
   const router = useRouter();
   const { t, tList } = useTranslation();
-  const paymentMethodLabels: Record<PaymentMethod, string> = {
+  const paymentMethodLabels: Record<OnlinePaymentMethod, string> = {
     mtn_momo: t("checkout.paymentMethods.mtn_momo"),
     orange_money: t("checkout.paymentMethods.orange_money"),
     card: t("checkout.paymentMethods.card"),
@@ -52,7 +57,7 @@ export function CheckoutFlow() {
   const [plan, setPlan] = useState<PaymentPlan>("deposit50");
   const [couponCode, setCouponCode] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mtn_momo");
+  const [paymentMethod, setPaymentMethod] = useState<OnlinePaymentMethod>("mtn_momo");
   const [payerPhone, setPayerPhone] = useState("");
 
   const [order, setOrder] = useState<ApiOrder | null>(null);

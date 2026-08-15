@@ -217,3 +217,17 @@ class CheckoutSerializer(serializers.Serializer):
     shipping_address = serializers.CharField()
     delivery_city = serializers.CharField()
     payment_method = serializers.ChoiceField(choices=["mtn_momo", "orange_money", "card"], required=False)
+
+
+class POSCheckoutSerializer(serializers.Serializer):
+    """
+    Vente comptoir (boutique de Yaoundé) : ticket de caisse encaissé
+    intégralement et sur-le-champ — pas d'acompte, pas d'adresse de
+    livraison. `customer_email` est facultatif (client de passage anonyme
+    si omis) et sert uniquement à retrouver/créer le compte client
+    rattaché au reçu (voir `_resolve_pos_customer`).
+    """
+
+    items = CheckoutItemSerializer(many=True)
+    payment_method = serializers.ChoiceField(choices=["cash", "mtn_momo", "orange_money", "card"])
+    customer_email = serializers.EmailField(required=False, allow_blank=True, default="")

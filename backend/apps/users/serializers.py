@@ -6,7 +6,7 @@ from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import EmailVerificationOTP, User, UserRole
+from .models import EmailVerificationOTP, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,20 +26,22 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "role")
 
 
-# Rôles sélectionnables par un visiteur à l'inscription — jamais "admin" :
-# un compte admin obtient au passage `is_staff=True` (voir User.save) et
-# l'accès complet au backoffice Django, ce qui en ferait une élévation de
-# privilège triviale si ce champ acceptait n'importe quelle valeur du modèle.
-REGISTRABLE_ROLES = (UserRole.CUSTOMER, UserRole.VENDOR)
-
-
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    L'inscription publique crée strictement un compte CLIENT — aucun champ
+    `role` n'est accepté ici (ce projet a un temps permis de choisir
+    customer/vendor à l'inscription ; revenu en arrière pour la boutique de
+    Yaoundé, où seule la propriétaire crée les comptes du personnel de caisse,
+    depuis le Backoffice Django déjà lié dans le menu compte admin — le
+    formulaire d'ajout d'utilisateur y expose déjà `role`, voir UserAdmin).
+    Le modèle a de toute façon `role=UserRole.CUSTOMER` par défaut.
+    """
+
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    role = serializers.ChoiceField(choices=[(r.value, r.label) for r in REGISTRABLE_ROLES], default=UserRole.CUSTOMER)
 
     class Meta:
         model = User
-        fields = ("email", "password", "first_name", "last_name", "phone_number", "whatsapp_number", "city", "role")
+        fields = ("email", "password", "first_name", "last_name", "phone_number", "whatsapp_number", "city")
 
     def validate_email(self, value):
         # `User.email` (hérité d'AbstractUser) n'a pas `unique=True` en base —

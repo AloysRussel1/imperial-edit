@@ -17,6 +17,7 @@ import type {
   FulfillmentStatus,
   InitiatePaymentPayload,
   LoginPayload,
+  POSCheckoutPayload,
   ProductAvailability,
   ProductCategory,
   ProductDetail,
@@ -332,6 +333,16 @@ export async function submitSourcingRequest(payload: SubmitSourcingPayload): Pro
 
 export async function checkoutOrder(payload: CheckoutPayload): Promise<ApiOrder> {
   const { data } = await apiClient.post<ApiOrder>("/orders/checkout/", payload);
+  return data;
+}
+
+/**
+ * Vente comptoir (Caisse, boutique de Yaoundé) — réservé au personnel de
+ * caisse/admin (voir `OrderViewSet.pos` côté backend). Réglée intégralement
+ * et sur-le-champ, contrairement à `checkoutOrder` (tunnel en ligne, acompte).
+ */
+export async function createPosSale(payload: POSCheckoutPayload): Promise<ApiOrder> {
+  const { data } = await apiClient.post<ApiOrder>("/orders/pos/", payload);
   return data;
 }
 

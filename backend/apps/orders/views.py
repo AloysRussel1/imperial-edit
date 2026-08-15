@@ -17,6 +17,7 @@ from .serializers import (
     CreateOrderSerializer,
     OrderSerializer,
     OrderTrackingSerializer,
+    POSCheckoutSerializer,
     VendorOrderItemSerializer,
 )
 from .services import (
@@ -24,6 +25,7 @@ from .services import (
     cancel_order,
     create_order_from_cart,
     create_order_from_items,
+    create_pos_order,
     register_payment,
 )
 
@@ -99,6 +101,31 @@ class OrderViewSet(viewsets.ModelViewSet):
                 shipping_address=data["shipping_address"],
                 delivery_city=data["delivery_city"],
                 payment_method=data.get("payment_method", ""),
+            )
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], permission_classes=(IsVendorOrAdmin,))
+    def pos(self, request):
+        """
+        Vente comptoir (`/api/orders/pos/`) — caissier·e ou admin uniquement.
+        À la différence de `checkout` (tunnel en ligne, acompte + réservation
+        de stock), la vente est réglée intégralement et sur-le-champ : le
+        stock est décompté directement et la commande ressort déjà
+        "Livré & soldé" (voir `create_pos_order`).
+        """
+        payload = POSCheckoutSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+
+        try:
+            order = create_pos_order(
+                cashier=request.user,
+                items=data["items"],
+                payment_method=data["payment_method"],
+                customer_email=data.get("customer_email", ""),
             )
         except ValidationError as exc:
             return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)

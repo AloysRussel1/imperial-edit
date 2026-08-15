@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Votre reçu — Imperial Collection</title>
+<style>
+  body, table, td { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  body { margin: 0; padding: 0; }
+  a { color: #8A6A3F; }
+  @media (max-width: 480px) {
+    .ie-card { border-radius: 0 !important; }
+    .ie-padded { padding: 24px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F7F4EE;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F4EE;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="ie-card" style="max-width:560px;background-color:#FFFFFF;border:1px solid rgba(33,31,29,0.1);border-radius:16px;overflow:hidden;">
+          <tr>
+            <td class="ie-padded" style="padding:32px 32px 24px 32px;text-align:center;border-bottom:1px solid rgba(33,31,29,0.08);">
+              <p style="margin:0;letter-spacing:4px;text-transform:uppercase;font-size:11px;color:#C9A24B;">Imperial Collection</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="ie-padded" style="padding:32px;color:#211F1D;font-size:15px;line-height:1.6;">
+              <p style="margin:0 0 4px;">Bonjour {{ first_name }},</p>
+              <p style="margin:0 0 24px;">Merci pour votre achat ! Voici le reçu de votre commande <strong>{{ order_number }}</strong>{% if is_pos %} réglée en boutique à Yaoundé{% endif %}.</p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th align="left" style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(33,31,29,0.5);padding:0 0 8px;border-bottom:1px solid rgba(33,31,29,0.1);">Article</th>
+                    <th align="center" style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(33,31,29,0.5);padding:0 0 8px;border-bottom:1px solid rgba(33,31,29,0.1);">Qté</th>
+                    <th align="right" style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:rgba(33,31,29,0.5);padding:0 0 8px;border-bottom:1px solid rgba(33,31,29,0.1);">Prix</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in items %}
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid rgba(33,31,29,0.06);font-size:14px;">{{ item.name }}<br><span style="color:rgba(33,31,29,0.45);font-size:12px;">{{ item.sku }}</span></td>
+                    <td align="center" style="padding:10px 0;border-bottom:1px solid rgba(33,31,29,0.06);font-size:14px;">{{ item.quantity }}</td>
+                    <td align="right" style="padding:10px 0;border-bottom:1px solid rgba(33,31,29,0.06);font-size:14px;white-space:nowrap;">{{ item.line_total }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F4EE;border-radius:10px;padding:16px;margin-bottom:8px;">
+                <tr>
+                  <td style="padding:4px 16px;font-size:14px;color:rgba(33,31,29,0.65);">Total réglé</td>
+                  <td align="right" style="padding:4px 16px;font-size:16px;font-weight:700;color:#211F1D;">{{ total }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 16px;font-size:13px;color:rgba(33,31,29,0.5);">Mode de règlement</td>
+                  <td align="right" style="padding:4px 16px;font-size:13px;color:rgba(33,31,29,0.5);">{{ payment_method }}</td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0;font-size:13px;color:rgba(33,31,29,0.6);">Une question sur cette commande ? Répondez simplement à cet e-mail.</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="ie-padded" style="padding:20px 32px;border-top:1px solid rgba(33,31,29,0.08);text-align:center;">
+              <p style="margin:0;font-size:11px;color:rgba(33,31,29,0.4);">© {{ year }} Imperial Collection — Paris, France.</p>
+              <p style="margin:6px 0 0;font-size:11px;color:rgba(33,31,29,0.35);">Sourcing &amp; mode de luxe, France ↔ Cameroun.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

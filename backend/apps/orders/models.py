@@ -40,6 +40,7 @@ class PaymentMethod(models.TextChoices):
     MTN_MOMO = "mtn_momo", "MTN Mobile Money"
     ORANGE_MONEY = "orange_money", "Orange Money"
     CARD = "card", "Carte bancaire"
+    CASH = "cash", "Espèces"
 
 
 class Cart(BaseModel):

@@ -2,24 +2,26 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Heart, Package, PackageSearch, Search, Store, User } from "lucide-react";
+import { CreditCard, Heart, Package, PackageSearch, Search, Store, User } from "lucide-react";
 
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { FavoritesContent } from "@/components/favorites/favorites-content";
 import { ProfileTab } from "@/components/account/profile-tab";
 import { VendorOrdersTab } from "@/components/vendor/vendor-orders-tab";
+import { VendorPosTab } from "@/components/vendor/vendor-pos-tab";
 import { VendorProductsTab } from "@/components/vendor/vendor-products-tab";
 import { VendorSourcingTab } from "@/components/vendor/vendor-sourcing-tab";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
-type TabId = "orders" | "profile" | "favorites" | "vendor-products" | "vendor-orders" | "vendor-sourcing";
+type TabId = "orders" | "profile" | "favorites" | "vendor-pos" | "vendor-products" | "vendor-orders" | "vendor-sourcing";
 
-const VENDOR_ONLY_TABS: TabId[] = ["vendor-products", "vendor-orders", "vendor-sourcing"];
+const VENDOR_ONLY_TABS: TabId[] = ["vendor-pos", "vendor-products", "vendor-orders", "vendor-sourcing"];
 const KNOWN_TABS: TabId[] = [
   "orders",
   "profile",
   "favorites",
+  "vendor-pos",
   "vendor-products",
   "vendor-orders",
   "vendor-sourcing",
@@ -37,14 +39,17 @@ const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
 // sourcing via la vue plus complète d'/admin-dashboard (états résolus déjà
 // gérés là-bas, pas de doublon incomplet ici).
 const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
+  { id: "vendor-pos", label: "Caisse", icon: CreditCard },
   { id: "vendor-products", label: "Catalogue Produits", icon: Store },
   { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
   { id: "vendor-sourcing", label: "Demandes de sourcing", icon: Search },
 ];
 
-// Droits cumulatifs (Admin = Client + Vendeur + Admin) : seul cet onglet
-// vendeur est aussi ouvert à l'admin.
-const ADMIN_CUMULATIVE_TABS: TabId[] = ["vendor-products"];
+// Droits cumulatifs (Admin = Client + Vendeur + Admin) : la Caisse et le
+// catalogue restent aussi ouverts à l'admin (la propriétaire peut elle-même
+// tenir le comptoir) ; commandes et sourcing restent gérées via la vue plus
+// complète d'/admin-dashboard.
+const ADMIN_CUMULATIVE_TABS: TabId[] = ["vendor-pos", "vendor-products"];
 
 function isVendorOnlyTab(tab: string): tab is TabId {
   return (VENDOR_ONLY_TABS as string[]).includes(tab);
@@ -139,6 +144,7 @@ export function AccountShell() {
         {/* Double garde, en plus de la redirection ci-dessus : ces composants
             ne sont jamais présents dans le DOM pour un rôle qui n'y a pas
             droit, même l'instant d'un rendu avant que l'effet ne corrige `active`. */}
+        {active === "vendor-pos" && canAccessTab("vendor-pos", role) ? <VendorPosTab /> : null}
         {active === "vendor-products" && canAccessTab("vendor-products", role) ? <VendorProductsTab /> : null}
         {active === "vendor-orders" && canAccessTab("vendor-orders", role) ? <VendorOrdersTab /> : null}
         {active === "vendor-sourcing" && canAccessTab("vendor-sourcing", role) ? <VendorSourcingTab /> : null}

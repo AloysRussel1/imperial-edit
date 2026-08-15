@@ -12,7 +12,7 @@ import { Price } from "@/components/common/price";
 import { fetchOrder, initiatePayment, simulateSandboxPaymentOutcome } from "@/lib/api";
 import { PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { ApiOrder, ApiTransaction, PaymentMethod } from "@/types";
+import type { ApiOrder, ApiTransaction } from "@/types";
 
 interface PayBalanceDialogProps {
   order: ApiOrder;
@@ -20,13 +20,17 @@ interface PayBalanceDialogProps {
   onSettled: () => void;
 }
 
+/** Règlement du solde en ligne : jamais "espèces" ici, qui n'a de sens qu'au
+ * comptoir (module Caisse) — voir VendorPosTab. */
+type OnlinePaymentMethod = "mtn_momo" | "orange_money" | "card";
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
   const [open, setOpen] = useState(false);
-  const [method, setMethod] = useState<PaymentMethod>("mtn_momo");
+  const [method, setMethod] = useState<OnlinePaymentMethod>("mtn_momo");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);

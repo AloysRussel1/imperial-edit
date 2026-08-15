@@ -29,3 +29,19 @@ def commit_stock_deduction(*, variant_id, quantity: int) -> ProductVariant:
     variant.reserved_quantity = max(variant.reserved_quantity - quantity, 0)
     variant.save(update_fields=["stock_quantity", "reserved_quantity", "updated_at"])
     return variant
+
+
+@transaction.atomic
+def sell_stock_immediately(*, variant_id, quantity: int) -> ProductVariant:
+    """
+    Décompte le stock directement, sans étape de réservation intermédiaire —
+    utilisée par la vente comptoir (POS) : l'article quitte le magasin
+    sur-le-champ, contrairement au tunnel en ligne (reserve_stock) qui garde
+    une fenêtre de réservation avant confirmation/livraison.
+    """
+    variant = ProductVariant.objects.select_for_update().get(id=variant_id)
+    if variant.available_quantity < quantity:
+        raise ValidationError(f"Stock insuffisant pour {variant.sku}: {variant.available_quantity} disponible(s).")
+    variant.stock_quantity -= quantity
+    variant.save(update_fields=["stock_quantity", "updated_at"])
+    return variant

@@ -69,14 +69,14 @@ export type OrderStatus =
   | "delivered_and_completed"
   | "cancelled";
 
-export type PaymentMethod = "mtn_momo" | "orange_money" | "card";
+export type PaymentMethod = "mtn_momo" | "orange_money" | "card" | "cash";
 
 // ---- Formes brutes renvoyées par l'API Django (avant adaptation côté frontend) ----
 
+/** "vendor" désigne le personnel de caisse de la boutique de Yaoundé (rôle
+ * historiquement nommé pour une place de marché multi-vendeurs) — lecture
+ * seule sur le catalogue, accès à la Caisse (POS). */
 export type UserRole = "admin" | "vendor" | "customer";
-/** Rôles réellement sélectionnables à l'inscription — jamais "admin", qui ne
- * doit pouvoir être atteint que par une promotion manuelle côté backoffice. */
-export type RegistrableRole = "customer" | "vendor";
 
 export interface ApiUser {
   id: string;
@@ -103,7 +103,6 @@ export interface RegisterPayload {
   phone_number?: string;
   whatsapp_number?: string;
   city?: string;
-  role: RegistrableRole;
 }
 
 export interface LoginPayload {
@@ -242,6 +241,14 @@ export interface CheckoutPayload {
   delivery_city: string;
   payment_method: PaymentMethod;
   coupon_code?: string;
+}
+
+/** Vente comptoir (Caisse, `/api/orders/pos/`) — pas d'acompte ni d'adresse
+ * de livraison, réglée intégralement et sur-le-champ. */
+export interface POSCheckoutPayload {
+  items: { variant_id: string; quantity: number }[];
+  payment_method: PaymentMethod;
+  customer_email?: string;
 }
 
 export type TransactionPurpose = "deposit" | "balance" | "full";

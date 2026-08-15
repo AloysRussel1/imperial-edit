@@ -11,6 +11,7 @@ import { Price } from "@/components/common/price";
 import { VendorProductForm } from "@/components/vendor/vendor-product-form";
 import { deleteVendorProduct, fetchVendorProducts } from "@/lib/api";
 import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
+import { useAuthStore } from "@/store/auth-store";
 import { toast } from "@/store/toast-store";
 import type { ProductDetail } from "@/types";
 
@@ -25,6 +26,13 @@ interface VendorProductsTabProps {
 }
 
 export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabProps) {
+  // Boutique de Yaoundé : le personnel de caisse (role="vendor") consulte le
+  // catalogue pour encaisser mais ne peut plus le modifier (voir
+  // IsVendorReadOnlyAdminWrite côté backend) — seule la propriétaire (admin)
+  // garde les actions Créer/Éditer/Supprimer.
+  const role = useAuthStore((state) => state.user?.role);
+  const canWrite = role === "admin";
+
   const [products, setProducts] = useState<ProductDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<ProductDetail | null | "new">(null);
@@ -67,9 +75,11 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-xl text-imperial-black">{title}</h2>
-        <Button variant="gold" size="sm" onClick={() => setEditing("new")}>
-          <Plus className="mr-1.5 h-4 w-4" /> Ajouter un produit
-        </Button>
+        {canWrite ? (
+          <Button variant="gold" size="sm" onClick={() => setEditing("new")}>
+            <Plus className="mr-1.5 h-4 w-4" /> Ajouter un produit
+          </Button>
+        ) : null}
       </div>
 
       {error ? (
@@ -121,25 +131,27 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
                     {product.is_active ? "Actif" : "Inactif"}
                   </Badge>
                 </div>
-                <div className="flex gap-2 border-t border-imperial-black/10 pt-3">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(product)}>
-                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Éditer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 hover:border-red-700 hover:text-red-700"
-                    disabled={busySlug === product.slug}
-                    onClick={() => handleDelete(product)}
-                  >
-                    {busySlug === product.slug ? (
-                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                    )}
-                    Supprimer
-                  </Button>
-                </div>
+                {canWrite ? (
+                  <div className="flex gap-2 border-t border-imperial-black/10 pt-3">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(product)}>
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Éditer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 hover:border-red-700 hover:text-red-700"
+                      disabled={busySlug === product.slug}
+                      onClick={() => handleDelete(product)}
+                    >
+                      {busySlug === product.slug ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Supprimer
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -155,7 +167,7 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
                   <th className="px-4 py-3 font-medium">Prix</th>
                   <th className="px-4 py-3 font-medium">Stock</th>
                   <th className="px-4 py-3 font-medium">Statut</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  {canWrite ? <th className="px-4 py-3 font-medium text-right">Actions</th> : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-imperial-black/5">
@@ -188,27 +200,29 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
                         {product.is_active ? "Actif" : "Inactif"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setEditing(product)} title="Éditer">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={busySlug === product.slug}
-                          onClick={() => handleDelete(product)}
-                          title="Supprimer"
-                          className="hover:border-red-700 hover:text-red-700"
-                        >
-                          {busySlug === product.slug ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </div>
-                    </td>
+                    {canWrite ? (
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setEditing(product)} title="Éditer">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={busySlug === product.slug}
+                            onClick={() => handleDelete(product)}
+                            title="Supprimer"
+                            className="hover:border-red-700 hover:text-red-700"
+                          >
+                            {busySlug === product.slug ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -217,7 +231,7 @@ export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabP
         </>
       )}
 
-      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={canWrite && editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing === "new" ? "Nouveau produit" : "Modifier le produit"}</DialogTitle>
