@@ -10,8 +10,11 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import EmailVerificationOTP, User
+from apps.common.permissions import IsAdminRole
+
+from .models import EmailVerificationOTP, User, UserRole
 from .serializers import (
+    AdminStaffSerializer,
     ImperialTokenObtainPairSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
@@ -100,6 +103,22 @@ class ResendOTPView(APIView):
             _issue_otp(user)
 
         return Response({"detail": "Un nouveau code de vérification vient d'être envoyé."})
+
+
+class AdminStaffListCreateView(generics.ListCreateAPIView):
+    """
+    Personnel de la boutique de Yaoundé (comptes role="vendor" = caissier·e /
+    vendeur·se) — réservé à l'admin, en lecture (liste du personnel déjà créé)
+    comme en écriture (nouveau compte, voir AdminStaffSerializer). La
+    désactivation d'un compte reste, pour l'instant, une opération réservée
+    au Backoffice Django (/admin/).
+    """
+
+    serializer_class = AdminStaffSerializer
+    permission_classes = (IsAdminRole,)
+
+    def get_queryset(self):
+        return User.objects.filter(role=UserRole.VENDOR).order_by("-date_joined")
 
 
 class MeView(generics.RetrieveUpdateAPIView):

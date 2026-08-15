@@ -90,6 +90,25 @@ export interface ApiUser {
   country?: string;
 }
 
+/** Compte personnel (caissier·e / vendeur·se) de la boutique de Yaoundé, créé
+ * exclusivement par l'admin — voir AdminStaffTab et l'endpoint `/auth/staff/`. */
+export interface ApiStaffUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
+  is_active: boolean;
+  date_joined: string;
+}
+
+export interface CreateStaffPayload {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface AuthTokens {
   access: string;
   refresh: string;

@@ -16,6 +16,8 @@ import type {
   CheckoutPayload,
   FulfillmentStatus,
   InitiatePaymentPayload,
+  ApiStaffUser,
+  CreateStaffPayload,
   LoginPayload,
   POSCheckoutPayload,
   ProductAvailability,
@@ -416,6 +418,22 @@ export async function settleOrderBalance(
   const { data } = await apiClient.post<ApiOrder>(`/orders/${orderId}/settle_balance/`, {
     payment_method: paymentMethod,
   });
+  return data;
+}
+
+/**
+ * Personnel de la boutique (comptes role="vendor") — réservé à l'admin, voir
+ * AdminStaffListCreateView côté backend. `createStaffAccount` ignore
+ * silencieusement tout `role` envoyé par le client : le backend le fige à
+ * "vendor" quoi qu'il arrive.
+ */
+export async function fetchStaffAccounts(): Promise<ApiStaffUser[]> {
+  const { data } = await apiClient.get<{ results: ApiStaffUser[] }>("/auth/staff/");
+  return data.results;
+}
+
+export async function createStaffAccount(payload: CreateStaffPayload): Promise<ApiStaffUser> {
+  const { data } = await apiClient.post<ApiStaffUser>("/auth/staff/", payload);
   return data;
 }
 

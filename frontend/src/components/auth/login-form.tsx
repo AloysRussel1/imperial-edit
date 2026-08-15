@@ -27,11 +27,14 @@ export function LoginForm() {
     setLoading(true);
     try {
       await login({ email, password });
-      // Sans destination explicite, un compte admin est envoyé directement sur
-      // le tableau de bord de synthèse (KPIs, commandes, sourcing, catalogue)
-      // plutôt que sur l'espace "mes commandes" pensé pour un client.
+      // Sans destination explicite (`next`, ex. lien "Se connecter" depuis le
+      // checkout) : l'admin est envoyé sur son espace complet (catalogue,
+      // personnel, et — droits cumulatifs — la Caisse), le personnel de
+      // caisse directement sur la Caisse (son seul vrai usage quotidien, pas
+      // la peine de repasser par les onglets), le client sur son espace
+      // "mes commandes" habituel.
       const role = useAuthStore.getState().user?.role;
-      const defaultRedirect = role === "admin" ? "/admin-dashboard" : "/dashboard";
+      const defaultRedirect = role === "vendor" ? "/dashboard?tab=vendor-pos" : "/dashboard";
       const redirectTo = searchParams.get("next") ?? defaultRedirect;
       router.push(redirectTo);
     } catch {

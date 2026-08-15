@@ -2,8 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CreditCard, Heart, Package, PackageSearch, Search, Store, User } from "lucide-react";
+import { CreditCard, Heart, Package, PackageSearch, Search, Store, User, Users } from "lucide-react";
 
+import { AdminStaffTab } from "@/components/admin/admin-staff-tab";
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { FavoritesContent } from "@/components/favorites/favorites-content";
 import { ProfileTab } from "@/components/account/profile-tab";
@@ -14,9 +15,20 @@ import { VendorSourcingTab } from "@/components/vendor/vendor-sourcing-tab";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
-type TabId = "orders" | "profile" | "favorites" | "vendor-pos" | "vendor-products" | "vendor-orders" | "vendor-sourcing";
+type TabId =
+  | "orders"
+  | "profile"
+  | "favorites"
+  | "vendor-pos"
+  | "vendor-products"
+  | "vendor-orders"
+  | "vendor-sourcing"
+  | "admin-staff";
 
 const VENDOR_ONLY_TABS: TabId[] = ["vendor-pos", "vendor-products", "vendor-orders", "vendor-sourcing"];
+// Jamais cumulatif au vendeur, contrairement à VENDOR_ONLY_TABS : créer des
+// comptes caissier·e reste un pouvoir strictement réservé à la propriétaire.
+const ADMIN_ONLY_TABS: TabId[] = ["admin-staff"];
 const KNOWN_TABS: TabId[] = [
   "orders",
   "profile",
@@ -25,6 +37,7 @@ const KNOWN_TABS: TabId[] = [
   "vendor-products",
   "vendor-orders",
   "vendor-sourcing",
+  "admin-staff",
 ];
 
 const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
@@ -51,11 +64,22 @@ const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
 // complète d'/admin-dashboard.
 const ADMIN_CUMULATIVE_TABS: TabId[] = ["vendor-pos", "vendor-products"];
 
+// Section admin dédiée, distincte de "Gestion de ma Boutique" (qui reste le
+// regroupement des onglets vendeur, cumulatifs ou non pour l'admin).
+const ADMIN_TABS: { id: TabId; label: string; icon: typeof User }[] = [
+  { id: "admin-staff", label: "Gestion du personnel", icon: Users },
+];
+
 function isVendorOnlyTab(tab: string): tab is TabId {
   return (VENDOR_ONLY_TABS as string[]).includes(tab);
 }
 
+function isAdminOnlyTab(tab: string): tab is TabId {
+  return (ADMIN_ONLY_TABS as string[]).includes(tab);
+}
+
 function canAccessTab(tab: TabId, role: string | undefined): boolean {
+  if (isAdminOnlyTab(tab)) return role === "admin";
   if (!isVendorOnlyTab(tab)) return true;
   if (role === "vendor") return true;
   return role === "admin" && ADMIN_CUMULATIVE_TABS.includes(tab);
@@ -90,6 +114,7 @@ export function AccountShell() {
   }, [hydrated, requestedTab, role, router]);
 
   const visibleVendorTabs = VENDOR_TABS.filter((tab) => canAccessTab(tab.id, role));
+  const visibleAdminTabs = ADMIN_TABS.filter((tab) => canAccessTab(tab.id, role));
 
   function selectTab(tab: TabId) {
     setActive(tab);
@@ -135,6 +160,17 @@ export function AccountShell() {
             </div>
           </div>
         ) : null}
+
+        {visibleAdminTabs.length > 0 ? (
+          <div className="flex flex-col gap-1 border-t border-imperial-black/10 pt-4 lg:pt-4">
+            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-widest2 text-imperial-black/40">
+              Administration
+            </p>
+            <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
+              {visibleAdminTabs.map(renderTabButton)}
+            </div>
+          </div>
+        ) : null}
       </nav>
 
       <div>
@@ -148,6 +184,7 @@ export function AccountShell() {
         {active === "vendor-products" && canAccessTab("vendor-products", role) ? <VendorProductsTab /> : null}
         {active === "vendor-orders" && canAccessTab("vendor-orders", role) ? <VendorOrdersTab /> : null}
         {active === "vendor-sourcing" && canAccessTab("vendor-sourcing", role) ? <VendorSourcingTab /> : null}
+        {active === "admin-staff" && canAccessTab("admin-staff", role) ? <AdminStaffTab /> : null}
       </div>
     </div>
   );

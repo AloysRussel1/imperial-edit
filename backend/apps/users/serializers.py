@@ -6,7 +6,7 @@ from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import EmailVerificationOTP, User
+from .models import EmailVerificationOTP, User, UserRole
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -70,6 +70,46 @@ class RegisterSerializer(serializers.ModelSerializer):
             # save() (deux inscriptions concurrentes avec la même adresse) :
             # la contrainte unique de `username` protège toujours l'intégrité
             # des données, mais ne doit plus jamais remonter en 500 brut.
+            raise serializers.ValidationError({"email": "Un compte existe déjà avec cette adresse e-mail."})
+        return user
+
+
+class AdminStaffSerializer(serializers.ModelSerializer):
+    """
+    Création de comptes personnel (caissier/vendeur) par l'admin — jamais un
+    flux d'auto-inscription : contrairement à `RegisterSerializer`, le compte
+    est actif immédiatement (l'admin identifie elle-même la personne en face
+    d'elle, pas besoin d'un code OTP pour prouver la possession de
+    l'adresse) et `role` est toujours figé à "vendor" ici, quoi que le
+    client envoie — un compte admin ne se crée que depuis le Backoffice
+    Django, jamais par cet endpoint.
+    """
+
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "password", "first_name", "last_name", "role", "is_active", "date_joined")
+        read_only_fields = ("id", "role", "is_active", "date_joined")
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte existe déjà avec cette adresse e-mail.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        user = User(
+            username=validated_data["email"],
+            is_active=True,
+            is_email_verified=True,
+            role=UserRole.VENDOR,
+            **validated_data,
+        )
+        user.set_password(password)
+        try:
+            user.save()
+        except IntegrityError:
             raise serializers.ValidationError({"email": "Un compte existe déjà avec cette adresse e-mail."})
         return user
 
