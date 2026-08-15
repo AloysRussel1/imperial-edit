@@ -20,18 +20,15 @@ logger = logging.getLogger(__name__)
 # tunnel d'achat reste opérationnel de bout en bout — le frontend n'a rien à
 # changer le jour où de vraies clés sont ajoutées à l'environnement.
 #
-# CINETPAY_SECRET_KEY est incluse ici alors qu'elle ne sert qu'à la
-# vérification de signature du webhook (CinetPayGateway.initiate_payment ne
-# s'en sert pas) : sans ce contrôle, un déploiement avec API_KEY/SITE_ID
-# renseignées mais SECRET_KEY oubliée passerait par le vrai gateway CinetPay
-# (paiement réellement débité chez le client) tout en calculant chaque HMAC
-# de webhook avec une clé vide — CinetPay signe ses notifications avec son
-# vrai secret partagé, la vérification échouerait donc systématiquement et
-# aucun paiement ne serait jamais confirmé côté commande, silencieusement.
+# CINETPAY_API_KEY et CINETPAY_SECRET_KEY sont strictement requises ;
+# CINETPAY_SITE_ID ne l'est plus (API/sandbox v2 CinetPay — repli sur
+# "sandbox" côté payload, voir CinetPayGateway.initiate_payment). Attention :
+# la documentation publique CinetPay v2 présente normalement `site_id` comme
+# un champ obligatoire de /v2/payment (il identifie le site marchand à
+# créditer) — si les paiements réels échouent malgré des clés API/secret
+# valides, c'est le premier point à vérifier auprès du support CinetPay.
 _REAL_PROVIDER_READY_CHECKS = {
-    "cinetpay": lambda: bool(
-        settings.CINETPAY_API_KEY and settings.CINETPAY_SITE_ID and settings.CINETPAY_SECRET_KEY
-    ),
+    "cinetpay": lambda: bool(settings.CINETPAY_API_KEY and settings.CINETPAY_SECRET_KEY),
     "flutterwave": lambda: bool(settings.FLUTTERWAVE_SECRET_KEY),
 }
 

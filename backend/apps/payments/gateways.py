@@ -50,7 +50,12 @@ class CinetPayGateway(PaymentGateway):
             self.API_URL,
             json={
                 "apikey": settings.CINETPAY_API_KEY,
-                "site_id": settings.CINETPAY_SITE_ID,
+                # CINETPAY_SITE_ID n'est plus strictement exigé à la
+                # configuration (voir _REAL_PROVIDER_READY_CHECKS) — replié
+                # sur "sandbox" pour continuer à transmettre une valeur non
+                # vide au payload plutôt qu'une chaîne vide silencieuse.
+                "site_id": settings.CINETPAY_SITE_ID or "sandbox",
+                "secret_key": settings.CINETPAY_SECRET_KEY,
                 "transaction_id": reference,
                 "amount": int(amount_xaf),
                 "currency": "XAF",
