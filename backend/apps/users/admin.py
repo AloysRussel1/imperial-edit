@@ -17,9 +17,18 @@ class UserAdmin(DjangoUserAdmin):
     # depuis l'admin, seulement visible en lecture dans la liste.
     fieldsets = DjangoUserAdmin.fieldsets + (
         ("Rôle & profil Imperial Collection", {
-            "fields": ("role", "phone_number", "whatsapp_number", "city", "country", "is_email_verified"),
+            "fields": (
+                "role",
+                "managed_by",
+                "phone_number",
+                "whatsapp_number",
+                "city",
+                "country",
+                "is_email_verified",
+            ),
         }),
     )
+    autocomplete_fields = ("managed_by",)
 
 
 @admin.register(EmailVerificationOTP)

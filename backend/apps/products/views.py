@@ -4,7 +4,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from apps.common.permissions import IsVendorReadOnlyAdminWrite, ReadOnlyOrAdmin
+from apps.common.permissions import IsCashierReadOnlyStaffWrite, ReadOnlyOrAdmin
 
 from .models import Category, Product, ProductImage
 from .serializers import CategorySerializer, ProductDetailSerializer, ProductImageSerializer, VendorProductWriteSerializer
@@ -46,30 +46,29 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 class VendorProductViewSet(viewsets.ModelViewSet):
     """
-    Boutique de Yaoundé (une seule boutique, plus une place de marché
-    multi-vendeurs) : ce catalogue est désormais commun à tout le monde.
-    Le personnel de caisse (role="vendor") y a un accès en LECTURE SEULE —
-    consulter stocks/prix pendant un encaissement (voir aussi le module
-    Caisse, /api/orders/pos/) — jamais en écriture ; seule la propriétaire
-    (role="admin") crée/modifie/supprime des produits. Voir
-    IsVendorReadOnlyAdminWrite pour l'application stricte de cette règle.
+    Catalogue de la boutique — hiérarchie à 3 niveaux (ADMIN > VENDOR >
+    CASHIER) : le vendeur (role="vendor", propriétaire de sa boutique) a le
+    CRUD complet, comme l'admin. Le personnel de caisse (role="cashier") n'y
+    a qu'un accès en LECTURE SEULE — consulter stocks/prix pendant un
+    encaissement (voir aussi le module Caisse, /api/orders/pos/), jamais en
+    écriture. Voir IsCashierReadOnlyStaffWrite pour l'application stricte de
+    cette règle.
     """
 
     serializer_class = VendorProductWriteSerializer
-    permission_classes = (IsAuthenticated, IsVendorReadOnlyAdminWrite)
+    permission_classes = (IsAuthenticated, IsCashierReadOnlyStaffWrite)
     lookup_field = "slug"
 
     def get_queryset(self):
-        # Plus de filtre par vendeur : catalogue unique, entièrement visible
-        # en lecture par le personnel de caisse comme par l'admin — seule la
-        # capacité d'écriture distingue les deux rôles désormais.
+        # Pas de filtre par vendeur : catalogue unique, entièrement visible
+        # en lecture par le personnel de caisse comme par le vendeur et
+        # l'admin — seule la capacité d'écriture distingue les rôles.
         return Product.objects.select_related("category", "vendor").prefetch_related("images", "variants")
 
     def perform_create(self, serializer):
-        # Seul un admin atteint ce point (IsVendorReadOnlyAdminWrite bloque
-        # l'écriture au personnel de caisse) — le produit lui est rattaché
-        # par défaut, `Product.vendor` restant informatif dans une boutique
-        # à propriétaire unique plutôt qu'une place de marché multi-vendeurs.
+        # Un caissier n'atteint jamais ce point (IsCashierReadOnlyStaffWrite
+        # bloque l'écriture) — le produit est rattaché au vendeur (ou admin)
+        # qui le crée.
         serializer.save(vendor=self.request.user)
 
     def perform_destroy(self, instance):

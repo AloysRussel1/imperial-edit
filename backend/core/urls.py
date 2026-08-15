@@ -10,6 +10,7 @@ from drf_spectacular.views import (
 
 from apps.orders import urls as orders_urls
 from apps.products import urls as products_urls
+from apps.users.views import VendorCashierListCreateView
 
 # Jazzmin lit ses propres réglages depuis JAZZMIN_SETTINGS (core/settings/base.py),
 # mais "index_title" (l'intitulé de la page d'accueil de l'admin natif Django)
@@ -30,6 +31,7 @@ api_v1_patterns = [
     # ci-dessus (catalogue public / gestion admin globale).
     path("vendor/products/", include(products_urls.vendor_urlpatterns)),
     path("vendor/order-items/", include(orders_urls.vendor_urlpatterns)),
+    path("vendor/cashiers/", VendorCashierListCreateView.as_view(), name="vendor-cashiers"),
 ]
 
 urlpatterns = [

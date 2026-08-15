@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin, IsVendorOrAdmin
+from apps.common.permissions import IsAdminRole, IsOwnerOrAdmin, IsPosStaff, IsVendorOrAdmin
 from apps.payments.models import Transaction, TransactionStatus
 from apps.promotions.services import apply_coupon
 from apps.sourcing.selectors import list_pending_requests
@@ -107,10 +107,10 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=["post"], permission_classes=(IsVendorOrAdmin,))
+    @action(detail=False, methods=["post"], permission_classes=(IsPosStaff,))
     def pos(self, request):
         """
-        Vente comptoir (`/api/orders/pos/`) — caissier·e ou admin uniquement.
+        Vente comptoir (`/api/orders/pos/`) — caissier·e, vendeur·se ou admin.
         À la différence de `checkout` (tunnel en ligne, acompte + réservation
         de stock), la vente est réglée intégralement et sur-le-champ : le
         stock est décompté directement et la commande ressort déjà

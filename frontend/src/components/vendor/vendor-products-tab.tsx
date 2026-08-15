@@ -26,12 +26,13 @@ interface VendorProductsTabProps {
 }
 
 export function VendorProductsTab({ title = "Mes produits" }: VendorProductsTabProps) {
-  // Boutique de Yaoundé : le personnel de caisse (role="vendor") consulte le
-  // catalogue pour encaisser mais ne peut plus le modifier (voir
-  // IsVendorReadOnlyAdminWrite côté backend) — seule la propriétaire (admin)
-  // garde les actions Créer/Éditer/Supprimer.
+  // Hiérarchie à 3 niveaux (ADMIN > VENDOR > CASHIER) : le vendeur a le CRUD
+  // complet sur son catalogue, comme l'admin (voir IsCashierReadOnlyStaffWrite
+  // côté backend) — un caissier n'atteint de toute façon jamais cet onglet
+  // (voir TAB_ROLES dans AccountShell), cette page n'a donc plus besoin de
+  // gérer un mode lecture seule.
   const role = useAuthStore((state) => state.user?.role);
-  const canWrite = role === "admin";
+  const canWrite = role === "admin" || role === "vendor";
 
   const [products, setProducts] = useState<ProductDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);

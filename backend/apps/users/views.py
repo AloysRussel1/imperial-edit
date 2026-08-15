@@ -10,7 +10,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.common.permissions import IsAdminRole
+from apps.common.permissions import IsAdminRole, IsVendorOrAdmin
 
 from .models import EmailVerificationOTP, User, UserRole
 from .serializers import (
@@ -21,6 +21,7 @@ from .serializers import (
     RegisterSerializer,
     ResendOTPSerializer,
     UserSerializer,
+    VendorCashierSerializer,
     VerifyEmailSerializer,
 )
 from .tasks import send_otp_email, send_password_reset_email, send_welcome_email
@@ -107,11 +108,11 @@ class ResendOTPView(APIView):
 
 class AdminStaffListCreateView(generics.ListCreateAPIView):
     """
-    Personnel de la boutique de Yaoundé (comptes role="vendor" = caissier·e /
-    vendeur·se) — réservé à l'admin, en lecture (liste du personnel déjà créé)
-    comme en écriture (nouveau compte, voir AdminStaffSerializer). La
-    désactivation d'un compte reste, pour l'instant, une opération réservée
-    au Backoffice Django (/admin/).
+    Comptes vendeur (role="vendor", propriétaires de boutique) — réservé à
+    l'admin, en lecture (liste des vendeurs déjà créés) comme en écriture
+    (nouveau compte, voir AdminStaffSerializer). La désactivation d'un
+    compte reste, pour l'instant, une opération réservée au Backoffice
+    Django (/admin/).
     """
 
     serializer_class = AdminStaffSerializer
@@ -119,6 +120,25 @@ class AdminStaffListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return User.objects.filter(role=UserRole.VENDOR).order_by("-date_joined")
+
+
+class VendorCashierListCreateView(generics.ListCreateAPIView):
+    """
+    Personnel de caisse (comptes role="cashier") — liste et création
+    réservées au vendeur propriétaire, qui ne voit et ne peut créer que SES
+    propres caissiers (voir `User.managed_by`), et, en droits cumulatifs
+    (comme partout ailleurs), à l'admin — qui voit tout le personnel de
+    caisse, tous vendeurs confondus.
+    """
+
+    serializer_class = VendorCashierSerializer
+    permission_classes = (IsVendorOrAdmin,)
+
+    def get_queryset(self):
+        queryset = User.objects.filter(role=UserRole.CASHIER).order_by("-date_joined")
+        if self.request.user.role == "vendor":
+            return queryset.filter(managed_by=self.request.user)
+        return queryset
 
 
 class MeView(generics.RetrieveUpdateAPIView):

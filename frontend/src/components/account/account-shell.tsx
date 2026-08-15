@@ -8,12 +8,14 @@ import { AdminStaffTab } from "@/components/admin/admin-staff-tab";
 import { CustomerDashboard } from "@/components/dashboard/customer-dashboard";
 import { FavoritesContent } from "@/components/favorites/favorites-content";
 import { ProfileTab } from "@/components/account/profile-tab";
+import { VendorCashiersTab } from "@/components/vendor/vendor-cashiers-tab";
 import { VendorOrdersTab } from "@/components/vendor/vendor-orders-tab";
 import { VendorPosTab } from "@/components/vendor/vendor-pos-tab";
 import { VendorProductsTab } from "@/components/vendor/vendor-products-tab";
 import { VendorSourcingTab } from "@/components/vendor/vendor-sourcing-tab";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import type { UserRole } from "@/types";
 
 type TabId =
   | "orders"
@@ -23,22 +25,27 @@ type TabId =
   | "vendor-products"
   | "vendor-orders"
   | "vendor-sourcing"
+  | "vendor-cashiers"
   | "admin-staff";
 
-const VENDOR_ONLY_TABS: TabId[] = ["vendor-pos", "vendor-products", "vendor-orders", "vendor-sourcing"];
-// Jamais cumulatif au vendeur, contrairement à VENDOR_ONLY_TABS : créer des
-// comptes caissier·e reste un pouvoir strictement réservé à la propriétaire.
-const ADMIN_ONLY_TABS: TabId[] = ["admin-staff"];
-const KNOWN_TABS: TabId[] = [
-  "orders",
-  "profile",
-  "favorites",
-  "vendor-pos",
-  "vendor-products",
-  "vendor-orders",
-  "vendor-sourcing",
-  "admin-staff",
-];
+// Table d'accès explicite, hiérarchie à 3 niveaux (ADMIN > VENDOR > CASHIER) :
+// le caissier n'apparaît QUE sur "vendor-pos" — jamais sur les onglets client
+// (orders/profile/favorites, qui supposent un compte acheteur) ni sur les
+// onglets de gestion boutique (catalogue, commandes, sourcing, personnel).
+// C'est la seule source de vérité pour qui voit/atteint quel onglet.
+const TAB_ROLES: Record<TabId, UserRole[]> = {
+  orders: ["customer", "vendor", "admin"],
+  profile: ["customer", "vendor", "admin"],
+  favorites: ["customer", "vendor", "admin"],
+  "vendor-pos": ["cashier", "vendor", "admin"],
+  "vendor-products": ["vendor", "admin"],
+  "vendor-orders": ["vendor", "admin"],
+  "vendor-sourcing": ["vendor", "admin"],
+  "vendor-cashiers": ["vendor", "admin"],
+  "admin-staff": ["admin"],
+};
+
+const KNOWN_TABS = Object.keys(TAB_ROLES) as TabId[];
 
 const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "orders", label: "Mes commandes & sourcing", icon: PackageSearch },
@@ -46,43 +53,33 @@ const BASE_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "favorites", label: "Mes favoris", icon: Heart },
 ];
 
-// Réservés au vendeur. "vendor-products" fait exception (voir
-// ADMIN_CUMULATIVE_TABS) : un admin a aussi accès à la gestion du catalogue
-// depuis son propre menu ("Gestion de ma Boutique"), mais gère commandes et
-// sourcing via la vue plus complète d'/admin-dashboard (états résolus déjà
-// gérés là-bas, pas de doublon incomplet ici).
+// "Gestion de ma Boutique" : ouvert au vendeur (propriétaire) en entier et,
+// droits cumulatifs, à l'admin. "vendor-pos" y figure aussi car un caissier
+// doit pouvoir l'atteindre — TAB_ROLES filtre le reste pour ce rôle.
 const VENDOR_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "vendor-pos", label: "Caisse", icon: CreditCard },
   { id: "vendor-products", label: "Catalogue Produits", icon: Store },
   { id: "vendor-orders", label: "Commandes à traiter", icon: Package },
   { id: "vendor-sourcing", label: "Demandes de sourcing", icon: Search },
+  { id: "vendor-cashiers", label: "Mon Personnel / Caissiers", icon: Users },
 ];
 
-// Droits cumulatifs (Admin = Client + Vendeur + Admin) : la Caisse et le
-// catalogue restent aussi ouverts à l'admin (la propriétaire peut elle-même
-// tenir le comptoir) ; commandes et sourcing restent gérées via la vue plus
-// complète d'/admin-dashboard.
-const ADMIN_CUMULATIVE_TABS: TabId[] = ["vendor-pos", "vendor-products"];
-
-// Section admin dédiée, distincte de "Gestion de ma Boutique" (qui reste le
-// regroupement des onglets vendeur, cumulatifs ou non pour l'admin).
+// Section admin dédiée, distincte de "Gestion de ma Boutique".
 const ADMIN_TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: "admin-staff", label: "Gestion du personnel", icon: Users },
 ];
 
-function isVendorOnlyTab(tab: string): tab is TabId {
-  return (VENDOR_ONLY_TABS as string[]).includes(tab);
-}
-
-function isAdminOnlyTab(tab: string): tab is TabId {
-  return (ADMIN_ONLY_TABS as string[]).includes(tab);
-}
-
 function canAccessTab(tab: TabId, role: string | undefined): boolean {
-  if (isAdminOnlyTab(tab)) return role === "admin";
-  if (!isVendorOnlyTab(tab)) return true;
-  if (role === "vendor") return true;
-  return role === "admin" && ADMIN_CUMULATIVE_TABS.includes(tab);
+  // Caissier verrouillé : jamais rien d'autre que "Caisse", pas même un
+  // repli sur les onglets client (il n'a pas d'identité acheteur).
+  if (role === "cashier") return tab === "vendor-pos";
+  // Visiteur non connecté (role encore inconnu, ex. avant hydratation ou
+  // jamais authentifié) : traité comme un client potentiel pour les onglets
+  // de base (chacun affiche son propre message "Connectez-vous", voir
+  // CustomerDashboard/ProfileTab) — jamais pour les onglets de gestion
+  // boutique/administration.
+  if (!role) return TAB_ROLES[tab].includes("customer");
+  return TAB_ROLES[tab].includes(role as UserRole);
 }
 
 export function AccountShell() {
@@ -98,11 +95,25 @@ export function AccountShell() {
   // compte) à chaque changement : un client qui tente `?tab=vendor-products`
   // sans être vendeur retombe silencieusement sur "profile", jamais un écran
   // vide ou une erreur — et l'URL elle-même est corrigée en conséquence.
+  // Un caissier, lui, est verrouillé sur "vendor-pos" quel que soit le lien
+  // suivi ou l'onglet précédemment actif — jamais de repli sur "profile"
+  // (masqué pour ce rôle, voir TAB_ROLES) ni d'autre onglet de gestion
+  // atteignable, même un instant.
   // Attend la réhydratation du store avant de trancher : sans ça, `role` vaut
   // encore `undefined` au tout premier rendu et un vrai vendeur se ferait
   // rediriger vers "profile" avant même que son rôle n'ait eu le temps de charger.
   useEffect(() => {
-    if (!hydrated || !requestedTab || !KNOWN_TABS.includes(requestedTab as TabId)) {
+    if (!hydrated) return;
+
+    if (role === "cashier") {
+      if (requestedTab !== "vendor-pos") {
+        router.replace("/dashboard?tab=vendor-pos", { scroll: false });
+      }
+      setActive("vendor-pos");
+      return;
+    }
+
+    if (!requestedTab || !KNOWN_TABS.includes(requestedTab as TabId)) {
       return;
     }
     if (!canAccessTab(requestedTab as TabId, role)) {
@@ -113,6 +124,7 @@ export function AccountShell() {
     setActive(requestedTab as TabId);
   }, [hydrated, requestedTab, role, router]);
 
+  const visibleBaseTabs = BASE_TABS.filter((tab) => canAccessTab(tab.id, role));
   const visibleVendorTabs = VENDOR_TABS.filter((tab) => canAccessTab(tab.id, role));
   const visibleAdminTabs = ADMIN_TABS.filter((tab) => canAccessTab(tab.id, role));
 
@@ -141,15 +153,25 @@ export function AccountShell() {
     );
   }
 
+  // Avant réhydratation, `role` n'est pas encore fiable : ne rien afficher
+  // plutôt que de laisser un instant transparaître un onglet par défaut
+  // ("Mes commandes") auquel un caissier n'a jamais droit.
+  if (!hydrated) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
       <nav className="flex flex-col gap-4">
-        <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">{BASE_TABS.map(renderTabButton)}</div>
+        {visibleBaseTabs.length > 0 ? (
+          <div className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">{visibleBaseTabs.map(renderTabButton)}</div>
+        ) : null}
 
         {/* Regroupées et clairement identifiées sous le même intitulé que le
             lien "Gestion de ma Boutique" du menu compte, pour que l'espace
             vendeur soit reconnaissable comme un tout cohérent plutôt qu'une
-            suite d'onglets mélangés à ceux du client. */}
+            suite d'onglets mélangés à ceux du client. Pour un caissier, ne
+            contient jamais que "Caisse" (TAB_ROLES filtre le reste). */}
         {visibleVendorTabs.length > 0 ? (
           <div className="flex flex-col gap-1 border-t border-imperial-black/10 pt-4 lg:pt-4">
             <p className="px-3 pb-1 text-xs font-medium uppercase tracking-widest2 text-imperial-black/40">
@@ -174,16 +196,17 @@ export function AccountShell() {
       </nav>
 
       <div>
-        {active === "orders" ? <CustomerDashboard /> : null}
-        {active === "profile" ? <ProfileTab /> : null}
-        {active === "favorites" ? <FavoritesContent /> : null}
         {/* Double garde, en plus de la redirection ci-dessus : ces composants
             ne sont jamais présents dans le DOM pour un rôle qui n'y a pas
             droit, même l'instant d'un rendu avant que l'effet ne corrige `active`. */}
+        {active === "orders" && canAccessTab("orders", role) ? <CustomerDashboard /> : null}
+        {active === "profile" && canAccessTab("profile", role) ? <ProfileTab /> : null}
+        {active === "favorites" && canAccessTab("favorites", role) ? <FavoritesContent /> : null}
         {active === "vendor-pos" && canAccessTab("vendor-pos", role) ? <VendorPosTab /> : null}
         {active === "vendor-products" && canAccessTab("vendor-products", role) ? <VendorProductsTab /> : null}
         {active === "vendor-orders" && canAccessTab("vendor-orders", role) ? <VendorOrdersTab /> : null}
         {active === "vendor-sourcing" && canAccessTab("vendor-sourcing", role) ? <VendorSourcingTab /> : null}
+        {active === "vendor-cashiers" && canAccessTab("vendor-cashiers", role) ? <VendorCashiersTab /> : null}
         {active === "admin-staff" && canAccessTab("admin-staff", role) ? <AdminStaffTab /> : null}
       </div>
     </div>

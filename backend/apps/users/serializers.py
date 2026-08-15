@@ -29,12 +29,12 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     """
     L'inscription publique crée strictement un compte CLIENT — aucun champ
-    `role` n'est accepté ici (ce projet a un temps permis de choisir
-    customer/vendor à l'inscription ; revenu en arrière pour la boutique de
-    Yaoundé, où seule la propriétaire crée les comptes du personnel de caisse,
-    depuis le Backoffice Django déjà lié dans le menu compte admin — le
-    formulaire d'ajout d'utilisateur y expose déjà `role`, voir UserAdmin).
-    Le modèle a de toute façon `role=UserRole.CUSTOMER` par défaut.
+    `role` n'est accepté ici. La hiérarchie ADMIN > VENDOR > CASHIER se
+    construit uniquement en cascade : l'admin crée les comptes vendeur (voir
+    AdminStaffSerializer, /api/auth/staff/) et chaque vendeur crée ses
+    propres comptes caissier (voir VendorCashierSerializer,
+    /api/vendor/cashiers/) — jamais par auto-inscription. Le modèle a de
+    toute façon `role=UserRole.CUSTOMER` par défaut.
     """
 
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -76,13 +76,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class AdminStaffSerializer(serializers.ModelSerializer):
     """
-    Création de comptes personnel (caissier/vendeur) par l'admin — jamais un
-    flux d'auto-inscription : contrairement à `RegisterSerializer`, le compte
-    est actif immédiatement (l'admin identifie elle-même la personne en face
-    d'elle, pas besoin d'un code OTP pour prouver la possession de
-    l'adresse) et `role` est toujours figé à "vendor" ici, quoi que le
-    client envoie — un compte admin ne se crée que depuis le Backoffice
-    Django, jamais par cet endpoint.
+    Création de comptes vendeur (role="vendor", propriétaire d'une boutique)
+    par l'admin — jamais un flux d'auto-inscription : contrairement à
+    `RegisterSerializer`, le compte est actif immédiatement (l'admin
+    identifie elle-même la personne en face d'elle, pas besoin d'un code OTP
+    pour prouver la possession de l'adresse) et `role` est toujours figé à
+    "vendor" ici, quoi que le client envoie — un compte admin ne se crée que
+    depuis le Backoffice Django, jamais par cet endpoint. Le vendeur ainsi
+    créé peut ensuite créer ses propres comptes caissier (voir
+    VendorCashierSerializer).
     """
 
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -104,6 +106,49 @@ class AdminStaffSerializer(serializers.ModelSerializer):
             is_active=True,
             is_email_verified=True,
             role=UserRole.VENDOR,
+            **validated_data,
+        )
+        user.set_password(password)
+        try:
+            user.save()
+        except IntegrityError:
+            raise serializers.ValidationError({"email": "Un compte existe déjà avec cette adresse e-mail."})
+        return user
+
+
+class VendorCashierSerializer(serializers.ModelSerializer):
+    """
+    Création de comptes caissier·e (role="cashier") par un vendeur — jamais
+    un flux d'auto-inscription. Le compte est actif immédiatement, comme
+    `AdminStaffSerializer` (le vendeur identifie lui-même la personne en
+    face de lui). `role` est toujours figé à "cashier" et `managed_by`
+    toujours fixé au vendeur à l'origine de la requête
+    (`context["request"].user`), quoi que le client envoie — un caissier
+    reste rattaché au vendeur qui l'a créé, jamais transférable depuis cet
+    endpoint.
+    """
+
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "password", "first_name", "last_name", "role", "is_active", "date_joined")
+        read_only_fields = ("id", "role", "is_active", "date_joined")
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte existe déjà avec cette adresse e-mail.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        vendor = self.context["request"].user
+        user = User(
+            username=validated_data["email"],
+            is_active=True,
+            is_email_verified=True,
+            role=UserRole.CASHIER,
+            managed_by=vendor,
             **validated_data,
         )
         user.set_password(password)

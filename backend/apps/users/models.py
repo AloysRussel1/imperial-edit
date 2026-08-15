@@ -10,13 +10,24 @@ from apps.common.models import BaseModel, UUIDModel
 
 
 class UserRole(models.TextChoices):
+    # Hiérarchie à 3 niveaux : ADMIN (plateforme) > VENDOR (boutique) >
+    # CASHIER (caisse de cette boutique). Chaque niveau hérite des capacités
+    # du niveau qu'il gère — jamais l'inverse — voir apps.common.permissions.
     ADMIN = "admin", "Administrateur"
     VENDOR = "vendor", "Vendeur"
+    CASHIER = "cashier", "Caissier"
     CUSTOMER = "customer", "Client"
 
 
 class User(UUIDModel, AbstractUser):
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.CUSTOMER)
+    # Uniquement significatif pour role="cashier" : le compte vendeur qui a
+    # créé ce caissier (voir VendorCashierSerializer) — détermine quel
+    # vendeur le voit dans "Mon Personnel / Caissiers" (/api/vendor/cashiers/).
+    # `related_name="cashiers"` : `some_vendor.cashiers.all()`.
+    managed_by = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="cashiers"
+    )
     phone_number = models.CharField(max_length=20, blank=True)
     whatsapp_number = models.CharField(max_length=20, blank=True)
     city = models.CharField(max_length=100, blank=True)

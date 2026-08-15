@@ -28,19 +28,33 @@ class IsVendorOrAdmin(BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.role in ("vendor", "admin"))
 
 
-class IsVendorReadOnlyAdminWrite(BasePermission):
+class IsCashierReadOnlyStaffWrite(BasePermission):
     """
-    Catalogue produit — boutique de Yaoundé (mono-boutique, plus une place de
-    marché multi-vendeurs) : le personnel de caisse (role="vendor") consulte
-    le catalogue (stocks, prix) pour encaisser, mais n'a plus le droit de le
-    modifier — seule la propriétaire (role="admin") crée/édite/supprime des
-    produits. Accès toujours refusé à un rôle "customer" égaré sur cet
+    Catalogue produit — hiérarchie à 3 niveaux (ADMIN > VENDOR > CASHIER) :
+    le personnel de caisse (role="cashier") consulte le catalogue
+    (stocks, prix) pour encaisser, mais n'a jamais le droit de le modifier ;
+    le vendeur (role="vendor", propriétaire de sa boutique) a le CRUD complet,
+    comme l'admin. Accès toujours refusé à un rôle "customer" égaré sur cet
     endpoint (contrairement à ReadOnlyOrAdmin, qui laisse lire n'importe qui).
     """
 
     def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated and request.user.role in ("vendor", "admin")):
+        role = request.user.role if request.user and request.user.is_authenticated else None
+        if role not in ("cashier", "vendor", "admin"):
             return False
         if request.method in SAFE_METHODS:
             return True
-        return request.user.role == "admin"
+        return role in ("vendor", "admin")
+
+
+class IsPosStaff(BasePermission):
+    """
+    Vente comptoir (`/api/orders/pos/`) : le personnel de caisse (role=
+    "cashier") y a un accès dédié — c'est son seul usage quotidien du
+    backend — mais le vendeur et l'admin (droits cumulatifs, comme partout
+    ailleurs) peuvent eux aussi tenir la caisse.
+    """
+
+    def has_permission(self, request, view):
+        role = request.user.role if request.user and request.user.is_authenticated else None
+        return role in ("cashier", "vendor", "admin")

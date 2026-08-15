@@ -73,10 +73,10 @@ export type PaymentMethod = "mtn_momo" | "orange_money" | "card" | "cash";
 
 // ---- Formes brutes renvoyées par l'API Django (avant adaptation côté frontend) ----
 
-/** "vendor" désigne le personnel de caisse de la boutique de Yaoundé (rôle
- * historiquement nommé pour une place de marché multi-vendeurs) — lecture
- * seule sur le catalogue, accès à la Caisse (POS). */
-export type UserRole = "admin" | "vendor" | "customer";
+/** Hiérarchie à 3 niveaux : ADMIN (plateforme) > VENDOR (boutique) > CASHIER
+ * (caisse de cette boutique). Le vendeur a le CRUD complet sur son
+ * catalogue ; le caissier n'a qu'un accès lecture seule + la Caisse (POS). */
+export type UserRole = "admin" | "vendor" | "cashier" | "customer";
 
 export interface ApiUser {
   id: string;
@@ -90,8 +90,10 @@ export interface ApiUser {
   country?: string;
 }
 
-/** Compte personnel (caissier·e / vendeur·se) de la boutique de Yaoundé, créé
- * exclusivement par l'admin — voir AdminStaffTab et l'endpoint `/auth/staff/`. */
+/** Compte personnel (vendeur·se ou caissier·e) créé par le niveau
+ * hiérarchique juste au-dessus — voir AdminStaffTab (`/auth/staff/`, crée
+ * des vendeurs) et VendorCashiersTab (`/vendor/cashiers/`, crée des
+ * caissiers). Même forme pour les deux, seul l'endpoint appelé diffère. */
 export interface ApiStaffUser {
   id: string;
   email: string;

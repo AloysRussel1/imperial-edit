@@ -422,10 +422,10 @@ export async function settleOrderBalance(
 }
 
 /**
- * Personnel de la boutique (comptes role="vendor") — réservé à l'admin, voir
- * AdminStaffListCreateView côté backend. `createStaffAccount` ignore
- * silencieusement tout `role` envoyé par le client : le backend le fige à
- * "vendor" quoi qu'il arrive.
+ * Comptes vendeur (role="vendor", propriétaires de boutique) — réservé à
+ * l'admin, voir AdminStaffListCreateView côté backend. `createStaffAccount`
+ * ignore silencieusement tout `role` envoyé par le client : le backend le
+ * fige à "vendor" quoi qu'il arrive.
  */
 export async function fetchStaffAccounts(): Promise<ApiStaffUser[]> {
   const { data } = await apiClient.get<{ results: ApiStaffUser[] }>("/auth/staff/");
@@ -497,6 +497,22 @@ export async function deleteVendorProductImage(slug: string, imageId: string): P
 export async function fetchVendorOrderItems(): Promise<ApiVendorOrderItem[]> {
   const { data } = await apiClient.get<{ results: ApiVendorOrderItem[] }>("/vendor/order-items/");
   return data.results;
+}
+
+/**
+ * Personnel de caisse (comptes role="cashier") du vendeur connecté — voir
+ * VendorCashierListCreateView côté backend. `createCashierAccount` ignore
+ * silencieusement tout `role` envoyé par le client : le backend le fige à
+ * "cashier" et le rattache toujours au vendeur à l'origine de la requête.
+ */
+export async function fetchCashierAccounts(): Promise<ApiStaffUser[]> {
+  const { data } = await apiClient.get<{ results: ApiStaffUser[] }>("/vendor/cashiers/");
+  return data.results;
+}
+
+export async function createCashierAccount(payload: CreateStaffPayload): Promise<ApiStaffUser> {
+  const { data } = await apiClient.post<ApiStaffUser>("/vendor/cashiers/", payload);
+  return data;
 }
 
 export async function updateVendorOrderItemFulfillment(

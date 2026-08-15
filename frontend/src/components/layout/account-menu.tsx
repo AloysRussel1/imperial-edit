@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  CreditCard,
   LayoutDashboard,
   LogIn,
   LogOut,
@@ -67,22 +68,40 @@ export function AccountMenu() {
           </>
         ) : (
           <>
-            {/* Visible pour tout compte connecté, quel que soit son rôle. */}
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard?tab=profile" className="flex items-center gap-2">
-                <UserCircle className="h-4 w-4" />
-                Mon profil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard?tab=orders" className="flex items-center gap-2">
-                <PackageSearch className="h-4 w-4" />
-                Mes commandes
-              </Link>
-            </DropdownMenuItem>
+            {/* Un caissier n'a pas d'identité acheteur — pas de "Mon profil"/
+                "Mes commandes" (onglets masqués, voir TAB_ROLES dans
+                AccountShell), seulement un accès direct à la Caisse. */}
+            {user.role === "cashier" ? (
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard?tab=vendor-pos"
+                  className="flex items-center gap-2 font-medium text-imperial-gold"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Caisse
+                </Link>
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard?tab=profile" className="flex items-center gap-2">
+                    <UserCircle className="h-4 w-4" />
+                    Mon profil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard?tab=orders" className="flex items-center gap-2">
+                    <PackageSearch className="h-4 w-4" />
+                    Mes commandes
+                  </Link>
+                </DropdownMenuItem>
+              </>
+            )}
 
             {/* Droits cumulatifs : un admin a aussi accès à l'espace vendeur
-                (Admin = Client + Vendeur + Admin), pas uniquement un vendeur. */}
+                (Admin = Client + Vendeur + Admin), pas uniquement un vendeur.
+                Jamais pour un caissier (déjà couvert par le lien "Caisse"
+                ci-dessus, sans accès catalogue en écriture). */}
             {user.role === "vendor" || user.role === "admin" ? (
               <>
                 <DropdownMenuSeparator />

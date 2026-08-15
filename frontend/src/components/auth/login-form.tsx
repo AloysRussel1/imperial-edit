@@ -27,15 +27,24 @@ export function LoginForm() {
     setLoading(true);
     try {
       await login({ email, password });
-      // Sans destination explicite (`next`, ex. lien "Se connecter" depuis le
-      // checkout) : l'admin est envoyé sur son espace complet (catalogue,
-      // personnel, et — droits cumulatifs — la Caisse), le personnel de
-      // caisse directement sur la Caisse (son seul vrai usage quotidien, pas
-      // la peine de repasser par les onglets), le client sur son espace
-      // "mes commandes" habituel.
       const role = useAuthStore.getState().user?.role;
-      const defaultRedirect = role === "vendor" ? "/dashboard?tab=vendor-pos" : "/dashboard";
-      const redirectTo = searchParams.get("next") ?? defaultRedirect;
+
+      // Caissier : redirection immédiate et obligatoire vers la Caisse — sur
+      // ce rôle, on ignore volontairement `next` (ex. lien "Se connecter"
+      // depuis le checkout, qui n'a aucun sens pour un compte caissier sans
+      // identité acheteur) ; AccountShell verrouille de toute façon ce rôle
+      // sur "vendor-pos" quelle que soit l'URL, donc l'envoyer ailleurs ne
+      // ferait qu'un aller-retour inutile.
+      if (role === "cashier") {
+        router.push("/dashboard?tab=vendor-pos");
+        return;
+      }
+
+      // Sans destination explicite (`next`) : l'admin et le vendeur sont
+      // envoyés sur leur espace complet (catalogue, statistiques, et pour le
+      // vendeur — gestion de ses propres caissiers), le client sur son
+      // espace "mes commandes" habituel.
+      const redirectTo = searchParams.get("next") ?? "/dashboard";
       router.push(redirectTo);
     } catch {
       setError("Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe.");
