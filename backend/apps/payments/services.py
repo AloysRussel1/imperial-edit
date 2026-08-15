@@ -1,5 +1,7 @@
+import logging
 from decimal import Decimal
 
+import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -10,13 +12,26 @@ from apps.orders.services import register_payment
 from .gateways import get_gateway
 from .models import Transaction, TransactionStatus
 
+logger = logging.getLogger(__name__)
+
 # Agrégateurs nécessitant des clés d'API réelles pour fonctionner, et le
 # réglage qui indique qu'elles sont configurées. Tant qu'aucune clé n'est
 # fournie, on bascule silencieusement sur le gateway "sandbox" pour que le
 # tunnel d'achat reste opérationnel de bout en bout — le frontend n'a rien à
 # changer le jour où de vraies clés sont ajoutées à l'environnement.
+#
+# CINETPAY_SECRET_KEY est incluse ici alors qu'elle ne sert qu'à la
+# vérification de signature du webhook (CinetPayGateway.initiate_payment ne
+# s'en sert pas) : sans ce contrôle, un déploiement avec API_KEY/SITE_ID
+# renseignées mais SECRET_KEY oubliée passerait par le vrai gateway CinetPay
+# (paiement réellement débité chez le client) tout en calculant chaque HMAC
+# de webhook avec une clé vide — CinetPay signe ses notifications avec son
+# vrai secret partagé, la vérification échouerait donc systématiquement et
+# aucun paiement ne serait jamais confirmé côté commande, silencieusement.
 _REAL_PROVIDER_READY_CHECKS = {
-    "cinetpay": lambda: bool(settings.CINETPAY_API_KEY and settings.CINETPAY_SITE_ID),
+    "cinetpay": lambda: bool(
+        settings.CINETPAY_API_KEY and settings.CINETPAY_SITE_ID and settings.CINETPAY_SECRET_KEY
+    ),
     "flutterwave": lambda: bool(settings.FLUTTERWAVE_SECRET_KEY),
 }
 
@@ -46,9 +61,21 @@ def initiate_payment(
 
     provider = _resolve_provider(provider)
     gateway = get_gateway(provider)
-    result = gateway.initiate_payment(
-        order=order, amount_xaf=amount, payer_phone_number=payer_phone_number, payment_method=payment_method
-    )
+    try:
+        result = gateway.initiate_payment(
+            order=order, amount_xaf=amount, payer_phone_number=payer_phone_number, payment_method=payment_method
+        )
+    except requests.RequestException:
+        # Clés présentes mais rejetées par l'agrégateur (site_id/apikey
+        # invalides, compte suspendu…), timeout, service indisponible : cette
+        # requête sortante est le seul appel non maîtrisé de tout le flux
+        # d'initiation — sans ce filet, elle remontait en 500 brut au lieu
+        # d'un message clair, la commande restant par ailleurs intacte
+        # (aucune Transaction créée, rien à annuler).
+        logger.exception("Échec de l'initiation du paiement %s pour la commande %s", provider, order.order_number)
+        raise ValidationError(
+            "Le paiement n'a pas pu être initié pour le moment — merci de réessayer dans un instant."
+        )
 
     return Transaction.objects.create(
         order=order,

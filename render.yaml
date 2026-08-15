@@ -124,7 +124,7 @@ services:
       - key: EMAIL_HOST_PASSWORD
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        value: "Imperial Collection <notifications@imperialcollection.com>"
+        value: "Imperial Collection <notifications@imperialedit.com>"
       # ---- Paiement Mobile Money (CinetPay) ----
       - key: CINETPAY_API_KEY
         sync: false
