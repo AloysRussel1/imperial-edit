@@ -61,9 +61,17 @@ if render_external_hostname:
     ALLOWED_HOSTS.append(render_external_hostname)
 
 # ==== Frontend Vercel : previews (*.vercel.app) + domaine(s) de prod ====
-# `CORS_ALLOWED_ORIGINS` (liste exacte, définie via DJANGO_CORS_ALLOWED_ORIGINS)
-# couvre le domaine de production custom ; le regex ci-dessous couvre en plus
-# tous les sous-domaines de preview Vercel (générés à chaque déploiement).
+# Domaine de production connu ajouté explicitement en plus de
+# DJANGO_CORS_ALLOWED_ORIGINS (défini via le dashboard Render, `sync: false`
+# dans render.yaml — donc jamais garanti d'être réellement renseigné) : ne
+# jamais dépendre uniquement d'une variable d'environnement facultative pour
+# une origine de production connue. Le regex ci-dessous couvre en plus tous
+# les sous-domaines de preview Vercel (générés à chaque déploiement), qui ne
+# peuvent eux jamais être listés à l'avance.
+CORS_ALLOWED_ORIGINS = [
+    *CORS_ALLOWED_ORIGINS,
+    "https://imperial-edit.vercel.app",
+]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
