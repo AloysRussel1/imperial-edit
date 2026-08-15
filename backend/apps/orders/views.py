@@ -177,7 +177,8 @@ class OrderTrackingView(APIView):
         order = get_order_for_tracking(lookup)
         if order is None:
             return Response({"detail": "Aucune commande ne correspond à ce numéro de suivi."}, status=404)
-        return Response(OrderTrackingSerializer(order).data)
+        serializer = OrderTrackingSerializer(order, context={"request": request})
+        return Response(serializer.data)
 
 
 class AdminDashboardSummaryView(APIView):

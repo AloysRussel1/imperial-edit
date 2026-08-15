@@ -218,7 +218,12 @@ export interface ApiOrderTracking {
   tracking_progress_percent: number;
   estimated_delivery_date: string | null;
   delivery_city: string;
-  shipping_address: string;
+  /** "Ville, Pays" — seule information de localisation garantie, que le
+   * consultant soit ou non le client propriétaire de la commande. */
+  delivery_location: string;
+  /** Adresse exacte : uniquement pour le client propriétaire authentifié
+   * (voir OrderTrackingSerializer côté backend) — `null` sinon. */
+  shipping_address: string | null;
   currency: string;
   total_xaf: string;
   amount_paid_xaf: string;

@@ -20,7 +20,11 @@ export interface OrderTimelineData {
   status_display: string;
   tracking_progress_percent: number;
   delivery_city: string;
-  shipping_address: string;
+  /** Uniquement fourni par le suivi public (ApiOrderTracking) — absent du
+   * tableau de bord client (ApiOrder), qui affiche toujours l'adresse
+   * complète sans avoir besoin de ce repli "ville, pays". */
+  delivery_location?: string;
+  shipping_address: string | null;
   deposit_percentage: 50 | 70 | 100;
   total_xaf: string;
   amount_paid_xaf: string;
@@ -122,8 +126,15 @@ export function OrderTimeline({ order }: { order: OrderTimelineData }) {
           <p className="text-xs uppercase tracking-widest2 text-imperial-ivory/50">
             {["Douala", "Yaoundé"].includes(order.delivery_city) ? "Agence de retrait" : "Adresse de livraison"}
           </p>
-          <p className="mt-1 text-imperial-ivory">{order.shipping_address || order.delivery_city || "—"}</p>
+          <p className="mt-1 text-imperial-ivory">
+            {order.shipping_address || order.delivery_location || order.delivery_city || "—"}
+          </p>
           {order.delivery_city ? <p className="text-imperial-ivory/60">{order.delivery_city}</p> : null}
+          {!order.shipping_address ? (
+            <p className="mt-1 text-xs text-imperial-ivory/40">
+              Adresse complète visible uniquement par le titulaire de la commande connecté.
+            </p>
+          ) : null}
           {order.estimated_delivery_date ? (
             <p className="mt-2 text-xs text-imperial-ivory/50">
               Livraison estimée :{" "}

@@ -10,13 +10,20 @@
        transforme html/body en conteneurs de défilement indépendants et casse
        le `position: sticky` du Header (il se met à défiler avec la page au
        lieu de rester fixé en haut). `clip` bloque le débordement horizontal
-       sans créer ce contexte de défilement. */
+       sans créer ce contexte de défilement.
+       `overflow-y: visible` fixé explicitement pour la même raison : sans
+       cette ligne, ne définir que `overflow-x` fait recalculer `overflow-y`
+       en `auto` (même règle de la spec) — ce même mécanisme, au-delà du
+       sticky, décalait aussi le menu déroulant du profil (Radix, en portail
+       vers <body>) une fois le Header épinglé au défilement. */
     overflow-x: clip;
+    overflow-y: visible;
   }
 
   body {
     font-feature-settings: "liga" 1, "kern" 1;
     overflow-x: clip;
+    overflow-y: visible;
   }
 
   ::selection {

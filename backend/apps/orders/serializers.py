@@ -125,12 +125,29 @@ class OrderSerializer(serializers.ModelSerializer):
         return f"{obj.customer.first_name} {obj.customer.last_name}".strip() or obj.customer.email
 
 
+# Reflète frontend/src/lib/constants.ts::DELIVERY_LOCATIONS — tenu synchronisé
+# à la main (liste des villes de livraison rarement modifiée), pour dériver
+# "Ville, Pays" côté tracking public sans stocker le pays en base.
+_DELIVERY_CITY_COUNTRIES = {
+    "Douala": "Cameroun",
+    "Yaoundé": "Cameroun",
+    "Bafoussam": "Cameroun",
+    "Garoua": "Cameroun",
+    "Bamenda": "Cameroun",
+    "Buea": "Cameroun",
+    "Paris (retrait ou envoi local)": "France",
+}
+
+
 class OrderTrackingSerializer(serializers.ModelSerializer):
     """
     Vue publique et volontairement restreinte d'une commande : accessible sans
     authentification à quiconque connaît le `tracking_number` (le code fait
     office de "clé" — même logique qu'un suivi de colis postal classique).
-    N'expose donc jamais l'e-mail ni le numéro WhatsApp du client.
+    N'expose donc jamais l'e-mail ni le numéro WhatsApp du client — ni,
+    désormais, l'adresse exacte de livraison pour qui ne serait pas le
+    client propriétaire de la commande (voir get_shipping_address) : seule
+    la ville + le pays, dérivés de delivery_city, restent visibles.
     """
 
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -138,6 +155,8 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
     amount_remaining_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     deposit_due_xaf = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     status_history = OrderStatusHistorySerializer(many=True, read_only=True)
+    shipping_address = serializers.SerializerMethodField()
+    delivery_location = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -149,6 +168,7 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
             "tracking_progress_percent",
             "estimated_delivery_date",
             "delivery_city",
+            "delivery_location",
             "shipping_address",
             "currency",
             "total_xaf",
@@ -160,6 +180,19 @@ class OrderTrackingSerializer(serializers.ModelSerializer):
             "created_at",
             "status_history",
         )
+
+    def _is_owner(self, obj) -> bool:
+        request = self.context.get("request")
+        return bool(request and request.user.is_authenticated and request.user.id == obj.customer_id)
+
+    def get_shipping_address(self, obj):
+        return obj.shipping_address if self._is_owner(obj) else None
+
+    def get_delivery_location(self, obj):
+        if not obj.delivery_city:
+            return ""
+        country = _DELIVERY_CITY_COUNTRIES.get(obj.delivery_city)
+        return f"{obj.delivery_city}, {country}" if country else obj.delivery_city
 
 
 class CreateOrderSerializer(serializers.Serializer):

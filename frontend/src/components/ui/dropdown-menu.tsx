@@ -20,7 +20,12 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[10rem] overflow-hidden rounded-md border border-imperial-black/10 bg-white p-1 text-imperial-black shadow-elevated data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        // Au-dessus du Header sticky (z-50) et de tout élément fixe de page
+        // (barres CTA mobiles, bouton WhatsApp flottant, z-40) — portail
+        // Radix vers <body>, donc déjà hors de la pile de superposition du
+        // Header par construction, mais une marge explicite reste la
+        // meilleure protection contre un futur z-index de page mal placé.
+        "z-[100] min-w-[10rem] overflow-hidden rounded-md border border-imperial-black/10 bg-white p-1 text-imperial-black shadow-elevated data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className
       )}
       {...props}
