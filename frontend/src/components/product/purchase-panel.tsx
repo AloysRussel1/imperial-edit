@@ -215,7 +215,11 @@ export function PurchasePanel({ product }: PurchasePanelProps) {
       {/* Barre d'action fixe mobile/tablette : le prix + les deux CTA restent
           accessibles en permanence, quelle que soit la position de défilement
           sur la page produit (description, avis, produits similaires…). */}
-      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-imperial-black/10 bg-white/95 p-3 backdrop-blur [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+      {/* `will-change-transform` : `position: fixed` + `backdrop-blur`
+          ensemble peut clignoter/se décaler pendant le défilement sur
+          mobile Safari — promotion sur calque GPU stable en amont, même
+          correctif que le Header sticky. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-imperial-black/10 bg-white/95 p-3 backdrop-blur will-change-transform [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <div className="min-w-0 shrink-0">
           <p className="text-[0.65rem] uppercase tracking-wide text-imperial-black/45">Acompte</p>
           <Price amountXaf={Math.round((totalXaf * depositPercentage) / 100)} className="font-semibold text-imperial-black" />

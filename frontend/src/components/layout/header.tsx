@@ -20,7 +20,15 @@ export function Header() {
   return (
     <>
       <AnnouncementBar />
-      <header className="sticky top-0 z-50 border-b border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur">
+      {/* `will-change-transform` : combiner `position: sticky` et
+          `backdrop-blur` sur le même élément est un bug WebKit/iOS Safari
+          connu — le flou forçant un recalcul de compositing coûteux à
+          chaque frame de défilement, l'en-tête peut clignoter, se décaler ou
+          rater un tap au moment même où le doigt se lève. Promouvoir
+          l'élément sur son propre calque GPU en amont (avant que le
+          défilement ne commence) élimine ce recalcul par frame et stabilise
+          le rendu pendant le scroll. */}
+      <header className="sticky top-0 z-50 border-b border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur will-change-transform">
         <div className="container flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-2 md:hidden">
             <MobileNav />

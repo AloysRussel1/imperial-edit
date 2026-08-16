@@ -4,8 +4,17 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
-    /* `clip` (pas `hidden`) : `overflow-x: hidden` seul force le navigateur à
+    /* PAS de `scroll-behavior: smooth` ici — aucune ancre en page (aucun
+       `scrollIntoView`/`href="#"` dans tout le projet) n'en a besoin, et ce
+       réglage a un effet de bord réel : `window.scrollTo()` sans option
+       `behavior` explicite hérite du `scroll-behavior` CSS de l'élément
+       défilé (spec CSSOM View) — or Next.js appelle exactement cela pour
+       remettre le défilement en haut à chaque navigation. Avec `smooth`
+       actif, cliquer un lien de nav depuis une page défilée déclenchait un
+       long glissement animé vers le haut au lieu d'un positionnement
+       instantané, perçu comme un "saut brutal"/bug d'affichage pendant que
+       la nouvelle page s'hydrate par-dessus.
+       `clip` (pas `hidden`) : `overflow-x: hidden` seul force le navigateur à
        calculer `overflow-y: auto` sur cet élément (spec CSS Overflow), ce qui
        transforme html/body en conteneurs de défilement indépendants et casse
        le `position: sticky` du Header (il se met à défiler avec la page au

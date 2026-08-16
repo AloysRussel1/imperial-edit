@@ -79,8 +79,13 @@ export function BottomNav() {
           pied de page (ou le dernier bloc de contenu) ne se retrouve jamais
           masqué derrière elle une fois arrivé en bas de la page. */}
       <div aria-hidden className="h-16 md:hidden [padding-bottom:env(safe-area-inset-bottom)]" />
+      {/* `will-change-transform` : même correctif que le Header sticky (voir
+          son commentaire) — `position: fixed` + `backdrop-blur` sur mobile
+          Safari peut aussi provoquer un décalage/scintillement pendant le
+          défilement, la barre étant recalculée à chaque frame plutôt que
+          promue sur son propre calque GPU stable. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 items-center border-t border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur [padding-bottom:env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 items-center border-t border-imperial-black/10 bg-imperial-ivory/95 backdrop-blur will-change-transform [padding-bottom:env(safe-area-inset-bottom)] md:hidden"
         aria-label="Navigation principale"
       >
         <Link href="/" className="flex h-16 items-center justify-center" aria-current={isHome ? "page" : undefined}>

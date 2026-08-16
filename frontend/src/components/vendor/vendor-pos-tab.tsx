@@ -1,14 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { AxiosError } from "axios";
-import { Banknote, Loader2, Minus, Plus, Printer, Receipt, Search, Smartphone, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  Loader2,
+  Minus,
+  Plus,
+  Printer,
+  Receipt,
+  Search,
+  Smartphone,
+  Trash2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { createPosSale, fetchVendorProducts } from "@/lib/api";
+import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import { cn, formatPrice } from "@/lib/utils";
 import { toast } from "@/store/toast-store";
 import type { ApiOrder, PaymentMethod, ProductDetail, ProductVariant } from "@/types";
@@ -23,9 +37,36 @@ interface TicketLine {
   quantity: number;
 }
 
+// En-dessous de ce seuil, le stock reste vendable mais mérite un signal
+// visuel — repérer d'un coup d'œil qu'il faut penser à réapprovisionner
+// avant la prochaine vente de cet article.
+const LOW_STOCK_THRESHOLD = 5;
+
 function variantLabel(variant: ProductVariant): string {
   const parts = [variant.size, variant.color].filter(Boolean);
   return parts.length > 0 ? parts.join(" · ") : "Unique";
+}
+
+function StockBadge({ quantity }: { quantity: number }) {
+  if (quantity <= 0) {
+    return (
+      <Badge variant="sale" className="shrink-0 gap-1">
+        <AlertTriangle className="h-3 w-3" /> Rupture
+      </Badge>
+    );
+  }
+  if (quantity <= LOW_STOCK_THRESHOLD) {
+    return (
+      <Badge variant="warning" className="shrink-0 gap-1">
+        <AlertTriangle className="h-3 w-3" /> En stock : {quantity}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="success" className="shrink-0">
+      En stock : {quantity}
+    </Badge>
+  );
 }
 
 export function VendorPosTab() {
@@ -61,6 +102,34 @@ export function VendorPosTab() {
   }, [query, products]);
 
   const total = ticket.reduce((sum, line) => sum + line.unitPriceXaf * line.quantity, 0);
+
+  // Touche Entrée = ajout instantané, sans lâcher le clavier — le geste
+  // naturel d'une douchette qui scanne un code-barres puis envoie un retour
+  // chariot. Priorité à une correspondance exacte de référence (SKU), seul
+  // cas où l'article visé n'est jamais ambigu ; sinon, uniquement si la
+  // recherche ne laisse qu'un seul produit à variante unique — jamais un
+  // choix arbitraire entre plusieurs articles, qui encaisserait le mauvais.
+  function handleSearchSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (results.length === 0) return;
+    const q = query.trim().toLowerCase();
+
+    for (const product of results) {
+      const exactVariant = product.variants.find((v) => v.sku.toLowerCase() === q);
+      if (exactVariant) {
+        addVariant(product, exactVariant);
+        setQuery("");
+        return;
+      }
+    }
+
+    const [onlyResult, secondResult] = results;
+    const [onlyVariant, secondVariant] = onlyResult?.variants ?? [];
+    if (onlyResult && !secondResult && onlyVariant && !secondVariant) {
+      addVariant(onlyResult, onlyVariant);
+      setQuery("");
+    }
+  }
 
   function addVariant(product: ProductDetail, variant: ProductVariant) {
     if (variant.available_quantity <= 0) {
@@ -155,16 +224,16 @@ export function VendorPosTab() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-3">
-          <div className="relative">
+          <form onSubmit={handleSearchSubmit} className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-imperial-black/40" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher un produit ou une référence…"
+              placeholder="Rechercher un produit ou scanner une référence…"
               className="pl-9"
               autoFocus
             />
-          </div>
+          </form>
 
           {loadError ? (
             <p className="text-sm text-red-700">{loadError}</p>
@@ -182,26 +251,62 @@ export function VendorPosTab() {
             </p>
           ) : (
             <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
-              {results.map((product) => (
-                <div key={product.id} className="rounded-lg border border-imperial-black/10 bg-white p-3">
-                  <p className="mb-2 text-sm font-medium text-imperial-black">{product.name}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {product.variants.map((variant) => (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        disabled={variant.available_quantity <= 0}
-                        onClick={() => addVariant(product, variant)}
-                        className="flex items-center gap-2 rounded-md border border-imperial-black/15 px-2.5 py-1.5 text-xs transition-colors hover:border-imperial-gold hover:bg-imperial-gold/10 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <span className="font-medium text-imperial-black">{variantLabel(variant)}</span>
-                        <span className="text-imperial-black/50">{formatPrice(variant.price_xaf, "XAF")}</span>
-                        <Badge variant="outline">Stock {variant.available_quantity}</Badge>
-                      </button>
-                    ))}
+              {results.map((product) => {
+                const cover = product.images[0];
+                return (
+                  <div key={product.id} className="flex gap-3 rounded-lg border border-imperial-black/10 bg-white p-3">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-imperial-ivory">
+                      {cover ? (
+                        <Image
+                          src={cover.url}
+                          alt={cover.alt}
+                          fill
+                          unoptimized
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <PlaceholderImage
+                          hue={30}
+                          productType={product.product_type}
+                          className="absolute inset-0"
+                          iconClassName="h-5 w-5"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-imperial-black">{product.name}</p>
+                      <p className="text-xs text-imperial-black/45">
+                        {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
+                      </p>
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {product.variants.map((variant) => (
+                          <button
+                            key={variant.id}
+                            type="button"
+                            disabled={variant.available_quantity <= 0}
+                            onClick={() => addVariant(product, variant)}
+                            className="flex w-full items-center justify-between gap-3 rounded-md border border-imperial-black/10 px-2.5 py-1.5 text-left text-xs transition-colors hover:border-imperial-gold hover:bg-imperial-gold/10 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-medium text-imperial-black">
+                                {variantLabel(variant)}
+                              </span>
+                              <span className="block truncate text-imperial-black/40">{variant.sku}</span>
+                            </span>
+                            <span className="flex shrink-0 flex-col items-end gap-1">
+                              <span className="font-medium text-imperial-black">
+                                {formatPrice(variant.price_xaf, "XAF")}
+                              </span>
+                              <StockBadge quantity={variant.available_quantity} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
