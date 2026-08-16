@@ -29,14 +29,20 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const title = pageTitle(sortNew, featuredOnly, saleOnly, typeLabel);
 
   return (
-    <main className="container py-14">
-      <Breadcrumbs items={[{ label: "Accueil", href: "/" }, { label: "Catalogue", href: "/products" }, ...(title !== "Toute la collection" ? [{ label: title }] : [])]} />
+    <main className="container py-8 sm:py-14">
+      <Breadcrumbs
+        items={[
+          { label: "Accueil", href: "/" },
+          { label: "Catalogue", href: "/products" },
+          ...(title !== "Toute la collection" ? [{ label: title }] : []),
+        ]}
+      />
       <SectionHeading
         align="left"
         eyebrow="Le Catalogue"
         title={title}
         description="Sacs, souliers, prêt-à-porter et parfums — chaque pièce est disponible à la commande avec acompte."
-        className="mb-12"
+        className="mb-8 sm:mb-12"
       />
       <CatalogClient
         products={products}

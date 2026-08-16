@@ -1,16 +1,18 @@
 "use client";
 
-import { type MouseEvent, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Minus, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { PlaceholderImage } from "@/components/common/placeholder-image";
 import { Price } from "@/components/common/price";
 import { PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/store/cart-store";
 import { useFavoritesStore } from "@/store/favorites-store";
+import { toast } from "@/store/toast-store";
 import type { ProductDetail } from "@/types";
 
 interface ProductCardProps {
@@ -29,6 +31,23 @@ export function ProductCard({ product }: ProductCardProps) {
   const isFavorite = useFavoritesStore((state) => state.items.some((i) => i.productId === product.id));
   const toggleFavorite = useFavoritesStore((state) => state.toggle);
 
+  // Ajout rapide (+/-) directement depuis la carte : ajoute toujours la
+  // variante par défaut (première en stock, sinon la première tout court) —
+  // jamais de sélecteur taille/couleur ici, qui resterait le rôle de la
+  // fiche produit. Le toast de confirmation précise la variante réellement
+  // ajoutée pour qu'un client cherchant une autre taille sache tout de suite
+  // qu'il doit passer par la fiche produit plutôt que d'être surpris à la
+  // livraison.
+  const addItem = useCartStore((state) => state.addItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const defaultVariant = useMemo(
+    () => product.variants.find((v) => v.is_in_stock) ?? product.variants[0] ?? null,
+    [product.variants]
+  );
+  const quantityInCart = useCartStore((state) =>
+    defaultVariant ? state.items.find((i) => i.variantId === defaultVariant.id)?.quantity ?? 0 : 0
+  );
+
   function handleToggleFavorite(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -42,16 +61,51 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   }
 
+  function handleQuickAdd(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!defaultVariant || !defaultVariant.is_in_stock) return;
+    addItem(
+      {
+        variantId: defaultVariant.id,
+        productId: product.id,
+        productSlug: product.slug,
+        name: product.name,
+        brand: product.brand,
+        size: defaultVariant.size,
+        color: defaultVariant.color,
+        imageUrl: cover?.url ?? "",
+        unitPriceXaf: defaultVariant.price_xaf,
+        depositPercentage: product.default_deposit_percentage,
+      },
+      1
+    );
+    const variantLabel = [defaultVariant.size, defaultVariant.color]
+      .filter((v) => v && v !== "Unique")
+      .join(" · ");
+    toast.success(`${product.name}${variantLabel ? ` (${variantLabel})` : ""} ajouté au panier.`);
+  }
+
+  function handleDecrement(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!defaultVariant) return;
+    updateQuantity(defaultVariant.id, quantityInCart - 1);
+  }
+
+  function handleIncrement(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!defaultVariant) return;
+    updateQuantity(defaultVariant.id, quantityInCart + 1);
+  }
+
   return (
     <Link
       href={`/products/${product.slug}`}
       className="group flex flex-col overflow-hidden rounded-lg border border-imperial-black/10 bg-white transition-shadow hover:shadow-elevated"
     >
-      {/* Ratio plus court sur mobile (grille en 1 colonne, carte pleine largeur :
-          un ratio 4/5 y produit une image très haute qui ralentit le défilement) ;
-          on retrouve le ratio portrait plus luxueux dès sm: (grille en 2+ colonnes,
-          cartes plus étroites). */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-imperial-ivory sm:aspect-[4/5]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-imperial-ivory">
         {cover && !imageFailed ? (
           <Image
             src={cover.url}
@@ -62,7 +116,7 @@ export function ProductCard({ product }: ProductCardProps) {
             // et ajoute un point de défaillance supplémentaire (validation de
             // domaine, quota du plan gratuit) pour un gain nul.
             unoptimized
-            sizes="(min-width: 1280px) 22vw, (min-width: 640px) 45vw, 90vw"
+            sizes="(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, 45vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => {
               console.error("Erreur de chargement d'image pour :", cover.url);
@@ -72,7 +126,7 @@ export function ProductCard({ product }: ProductCardProps) {
         ) : (
           <PlaceholderImage hue={30} productType={product.product_type} className="absolute inset-0" />
         )}
-        <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+        <div className="absolute left-2 top-2 flex flex-col gap-1 sm:left-3 sm:top-3 sm:gap-1.5">
           {product.is_on_sale ? <Badge variant="sale">Promotion</Badge> : null}
           {product.is_featured ? <Badge variant="gold">Sélection Impériale</Badge> : null}
         </div>
@@ -81,18 +135,18 @@ export function ProductCard({ product }: ProductCardProps) {
           onClick={handleToggleFavorite}
           aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
           aria-pressed={isFavorite}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-imperial-black/60 shadow-sm backdrop-blur transition-colors hover:text-imperial-gold"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-imperial-black/60 shadow-sm backdrop-blur transition-colors hover:text-imperial-gold sm:right-3 sm:top-3"
         >
           <Heart className={cn("h-4 w-4", isFavorite && "fill-imperial-gold text-imperial-gold")} strokeWidth={1.75} />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
-        <p className="text-xs uppercase tracking-wide text-imperial-black/45">
+      <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-4">
+        <p className="text-[0.65rem] uppercase tracking-wide text-imperial-black/45 sm:text-xs">
           {PRODUCT_TYPE_LABELS[product.product_type] ?? product.product_type}
         </p>
         <p className="text-xs text-imperial-black/50">{product.brand}</p>
-        <h3 className="font-display text-base leading-snug text-imperial-black">{product.name}</h3>
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
+        <h3 className="font-display text-sm leading-snug text-imperial-black sm:text-base">{product.name}</h3>
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 pt-2">
           <Price amountXaf={product.base_price_xaf} className="text-sm font-semibold text-imperial-black" />
           {product.compare_at_price_xaf ? (
             <>
@@ -106,6 +160,42 @@ export function ProductCard({ product }: ProductCardProps) {
             </>
           ) : null}
         </div>
+
+        {defaultVariant ? (
+          <div className="mt-2 flex items-center justify-end">
+            {quantityInCart === 0 ? (
+              <button
+                type="button"
+                onClick={handleQuickAdd}
+                disabled={!defaultVariant.is_in_stock}
+                aria-label={`Ajouter ${product.name} au panier`}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-imperial-black text-imperial-ivory transition-colors hover:bg-imperial-gold hover:text-imperial-black disabled:cursor-not-allowed disabled:bg-imperial-black/20"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDecrement}
+                  aria-label="Diminuer la quantité"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-imperial-black/15 hover:border-imperial-gold"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-4 text-center text-sm tabular-nums">{quantityInCart}</span>
+                <button
+                  type="button"
+                  onClick={handleIncrement}
+                  aria-label="Augmenter la quantité"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-imperial-black/15 hover:border-imperial-gold"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     </Link>
   );

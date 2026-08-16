@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 
 import { AppHydration } from "@/components/common/app-hydration";
 import { WhatsAppButton } from "@/components/common/whatsapp-button";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { Toaster } from "@/components/ui/toaster";
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />
+        <BottomNav />
         <WhatsAppButton variant="floating" />
         <Toaster />
       </body>

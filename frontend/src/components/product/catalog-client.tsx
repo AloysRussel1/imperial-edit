@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, SlidersHorizontal } from "lucide-react";
 
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductListItem } from "@/components/product/product-list-item";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn, formatXAF } from "@/lib/utils";
 import { CATALOG_PRODUCT_TYPES, PRODUCT_TYPE_LABELS } from "@/lib/constants";
 import type { DepositPercentage, ProductDetail, ProductType } from "@/types";
@@ -140,12 +141,172 @@ export function CatalogClient({
 
   const hasActiveFilters =
     types.length > 0 || brands.length > 0 || sizes.length > 0 || deposits.length > 0 || maxPrice !== null;
+  const advancedFilterCount = sizes.length + deposits.length + (maxPrice !== null ? 1 : 0);
 
   return (
-    <div className="grid grid-cols-1 gap-10 lg:grid-cols-[240px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:gap-10 lg:grid-cols-[240px_1fr]">
+      {/* Catégories/marques : carrousel de chips défilant horizontalement, en
+          tête du catalogue — jamais la sidebar complète, qui sur mobile
+          repousserait toute la grille sous une pile de filtres avant même
+          qu'un seul produit ne soit visible. Les filtres plus fins (taille,
+          prix, acompte) restent accessibles via le tiroir "Filtres avancés"
+          juste en dessous, sans jamais quitter la page. */}
+      <div className="space-y-3 lg:hidden">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+          {CATALOG_PRODUCT_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => toggleType(type)}
+              className={cn(
+                "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                types.includes(type)
+                  ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
+                  : "border-imperial-black/15 text-imperial-black/70"
+              )}
+            >
+              {PRODUCT_TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
+
+        {allBrands.length > 1 ? (
+          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+            {allBrands.map((brand) => (
+              <button
+                key={brand}
+                type="button"
+                onClick={() => toggleBrand(brand)}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                  brands.includes(brand)
+                    ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
+                    : "border-imperial-black/15 text-imperial-black/70"
+                )}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 rounded-full border border-imperial-black/15 px-3.5 py-1.5 text-sm text-imperial-black/70"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filtres avancés
+                {advancedFilterCount > 0 ? (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-imperial-gold px-1 text-[10px] font-semibold text-imperial-black">
+                    {advancedFilterCount}
+                  </span>
+                ) : null}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom">
+              <SheetHeader>
+                <SheetTitle>Filtres avancés</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">
+                    Tailles &amp; pointures
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allSizes.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => toggleSize(size)}
+                        className={cn(
+                          "rounded-md border px-3 py-1.5 text-sm transition-colors",
+                          sizes.includes(size)
+                            ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
+                            : "border-imperial-black/15 text-imperial-black/70"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {catalogMaxPrice > 0 ? (
+                  <div>
+                    <h3 className="mb-3 flex items-center justify-between text-xs uppercase tracking-widest2 text-imperial-black/50">
+                      <span>Prix maximum</span>
+                      <span className="normal-case tracking-normal text-imperial-black/70">
+                        {formatXAF(priceCeiling)}
+                      </span>
+                    </h3>
+                    <input
+                      type="range"
+                      min={0}
+                      max={catalogMaxPrice}
+                      step={Math.max(1000, Math.round(catalogMaxPrice / 100))}
+                      value={priceCeiling}
+                      onChange={(event) => setMaxPrice(Number(event.target.value))}
+                      className="w-full accent-imperial-gold"
+                      aria-label="Filtrer par prix maximum"
+                    />
+                  </div>
+                ) : null}
+
+                <div>
+                  <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">
+                    Option d&apos;acompte
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {DEPOSIT_FILTER_OPTIONS.map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => toggleDeposit(pct)}
+                        className={cn(
+                          "rounded-md border px-3 py-1.5 text-sm transition-colors",
+                          deposits.includes(pct)
+                            ? "border-imperial-gold bg-imperial-gold/10 text-imperial-black"
+                            : "border-imperial-black/15 text-imperial-black/70"
+                        )}
+                      >
+                        Acompte {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <SheetClose asChild>
+                  <button
+                    type="button"
+                    className="w-full rounded-md bg-imperial-gold py-3 text-sm font-medium text-imperial-black"
+                  >
+                    Voir {filtered.length} résultat{filtered.length > 1 ? "s" : ""}
+                  </button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="shrink-0 text-sm text-imperial-gold underline underline-offset-4"
+            >
+              Réinitialiser
+            </button>
+          ) : null}
+        </div>
+      </div>
+
       {/* `lg:sticky` : la sidebar de filtres reste visible pendant le défilement
-          de la grille, décalée sous le header sticky (h-16 + h-12 + marge). */}
-      <aside className="space-y-8 lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
+          de la grille, décalée sous le header sticky (h-16 + h-12 + marge).
+          Masquée en dessous de `lg` — remplacée par le carrousel de chips et
+          le tiroir "Filtres avancés" ci-dessus. */}
+      <aside className="hidden space-y-8 lg:sticky lg:top-32 lg:block lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-2">
         <div>
           <h3 className="mb-3 text-xs uppercase tracking-widest2 text-imperial-black/50">Catégories</h3>
           <div className="flex flex-wrap gap-2 lg:flex-col lg:items-start lg:gap-1.5">

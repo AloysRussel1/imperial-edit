@@ -36,6 +36,18 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Carrousels de chips (filtres catégories/marques, etc.) : le défilement
+     tactile horizontal reste actif, seule la barre de défilement visible
+     disparaît — elle n'apporte rien sur un rail de chips déjà scrollable
+     au doigt et alourdit visuellement l'interface mobile. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Impression du reçu de caisse (module POS) : masque tout le reste de la

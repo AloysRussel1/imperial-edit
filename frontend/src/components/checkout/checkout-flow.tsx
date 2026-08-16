@@ -16,7 +16,7 @@ import { Stepper } from "@/components/checkout/stepper";
 import { useTranslation } from "@/hooks/use-translation";
 import { checkoutOrder, fetchOrder, initiatePayment, simulateSandboxPaymentOutcome } from "@/lib/api";
 import { DELIVERY_LOCATIONS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, formatCameroonPhoneInput } from "@/lib/utils";
 import { cartTotalXaf, useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
 import type { ApiOrder, ApiTransaction, DepositPercentage } from "@/types";
@@ -263,7 +263,7 @@ export function CheckoutFlow() {
                   id="checkout-city"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-sm text-imperial-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold"
+                  className="flex h-11 w-full rounded-md border border-imperial-black/15 bg-white px-3 py-2 text-base text-imperial-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-imperial-gold sm:h-10 sm:text-sm"
                 >
                   <option value="">{t("checkout.citySelectPlaceholder")}</option>
                   {DELIVERY_LOCATIONS.map((group) => (
@@ -349,8 +349,11 @@ export function CheckoutFlow() {
                   </Label>
                   <Input
                     id="checkout-payer-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={payerPhone}
-                    onChange={(e) => setPayerPhone(e.target.value)}
+                    onChange={(e) => setPayerPhone(formatCameroonPhoneInput(e.target.value))}
                     placeholder="+237 6XX XXX XXX"
                   />
                 </div>

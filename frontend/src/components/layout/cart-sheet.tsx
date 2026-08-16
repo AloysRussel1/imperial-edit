@@ -71,19 +71,19 @@ export function CartSheet() {
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          className="flex h-6 w-6 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
+                          className="flex h-8 w-8 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
                           aria-label="Diminuer la quantité"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
                         <span className="w-4 text-center text-sm">{item.quantity}</span>
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                          className="flex h-6 w-6 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
+                          className="flex h-8 w-8 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
                           aria-label="Augmenter la quantité"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       <Price amountXaf={item.unitPriceXaf * item.quantity} className="text-sm font-medium" />
@@ -93,7 +93,7 @@ export function CartSheet() {
                     type="button"
                     onClick={() => removeItem(item.variantId)}
                     aria-label="Retirer l'article"
-                    className="h-fit text-imperial-black/30 hover:text-red-700"
+                    className="-m-1.5 h-fit p-1.5 text-imperial-black/30 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

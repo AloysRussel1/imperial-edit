@@ -1,52 +1,40 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Search } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { SearchAutocomplete } from "@/components/layout/search-autocomplete";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-export function SearchDialog() {
-  const router = useRouter();
-  const [query, setQuery] = useState("");
+interface SearchDialogProps {
+  /** Permet à la barre de navigation inférieure de réutiliser ce même tiroir
+   * de recherche sous l'apparence d'un item de nav (icône + libellé) plutôt
+   * que le petit bouton icône par défaut du header. */
+  trigger?: ReactNode;
+}
+
+export function SearchDialog({ trigger }: SearchDialogProps) {
   const [open, setOpen] = useState(false);
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setOpen(false);
-    const params = new URLSearchParams(query ? { q: query } : {});
-    router.push(`/products${params.toString() ? `?${params.toString()}` : ""}`);
-  }
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label="Rechercher"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:text-imperial-gold"
-        >
-          <Search className="h-4 w-4" />
-        </button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Rechercher dans la collection</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            autoFocus
-            placeholder="Un sac, une paire, un parfum…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <Button type="submit" variant="gold">
-            Rechercher
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        {trigger ?? (
+          <button
+            type="button"
+            aria-label="Rechercher"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:text-imperial-gold"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        )}
+      </SheetTrigger>
+      <SheetContent side="bottom" className="mx-auto max-w-lg">
+        <SheetHeader>
+          <SheetTitle>Rechercher dans la collection</SheetTitle>
+        </SheetHeader>
+        <SearchAutocomplete onNavigate={() => setOpen(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -5,13 +5,13 @@ import { AxiosError } from "axios";
 import { CreditCard, Loader2, Smartphone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Price } from "@/components/common/price";
 import { fetchOrder, initiatePayment, simulateSandboxPaymentOutcome } from "@/lib/api";
 import { PAYMENT_METHOD_LABELS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import { cn, formatCameroonPhoneInput } from "@/lib/utils";
 import type { ApiOrder, ApiTransaction } from "@/types";
 
 interface PayBalanceDialogProps {
@@ -110,13 +110,13 @@ export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetTrigger asChild>
         <Button size="sm" variant="gold">
           Payer le solde
         </Button>
-      </DialogTrigger>
-      <DialogContent>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="mx-auto max-w-lg">
         {confirmed ? (
           <div className="space-y-3 py-4 text-center">
             <p className="font-display text-lg text-imperial-black">Paiement confirmé</p>
@@ -130,15 +130,15 @@ export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
           </div>
         ) : transaction ? (
           <div className="space-y-4 py-2 text-center">
-            <DialogHeader>
-              <DialogTitle>Validez le paiement sur votre téléphone</DialogTitle>
-              <DialogDescription>
+            <SheetHeader>
+              <SheetTitle>Validez le paiement sur votre téléphone</SheetTitle>
+              <SheetDescription>
                 {method === "card"
                   ? "Une demande de paiement par carte a été initiée."
                   : `Une demande de paiement ${PAYMENT_METHOD_LABELS[method]} a été envoyée au ${phone}.`}{" "}
                 Composez votre code pour confirmer.
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
 
             {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
@@ -154,12 +154,12 @@ export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
           </div>
         ) : (
           <>
-            <DialogHeader>
-              <DialogTitle>Régler le solde — {order.order_number}</DialogTitle>
-              <DialogDescription>
+            <SheetHeader>
+              <SheetTitle>Régler le solde — {order.order_number}</SheetTitle>
+              <SheetDescription>
                 Solde restant : <Price amountXaf={remaining} />
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {(
@@ -191,8 +191,11 @@ export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
                 <Label htmlFor="balance-phone">Numéro payeur</Label>
                 <Input
                   id="balance-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatCameroonPhoneInput(e.target.value))}
                   placeholder="+237 6XX XXX XXX"
                 />
               </div>
@@ -206,7 +209,7 @@ export function PayBalanceDialog({ order, onSettled }: PayBalanceDialogProps) {
             </Button>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

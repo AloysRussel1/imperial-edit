@@ -59,7 +59,7 @@ export function CartPageContent() {
                   type="button"
                   onClick={() => removeItem(item.variantId)}
                   aria-label="Retirer l'article"
-                  className="shrink-0 text-imperial-black/30 hover:text-red-700"
+                  className="-m-1.5 shrink-0 p-1.5 text-imperial-black/30 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -70,19 +70,19 @@ export function CartPageContent() {
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                    className="flex h-7 w-7 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
+                    className="flex h-9 w-9 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
                     aria-label="Diminuer la quantité"
                   >
-                    <Minus className="h-3.5 w-3.5" />
+                    <Minus className="h-4 w-4" />
                   </button>
                   <span className="w-5 text-center text-sm">{item.quantity}</span>
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                    className="flex h-7 w-7 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
+                    className="flex h-9 w-9 items-center justify-center rounded border border-imperial-black/15 hover:border-imperial-gold"
                     aria-label="Augmenter la quantité"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-4 w-4" />
                   </button>
                 </div>
                 <Price amountXaf={item.unitPriceXaf} className="text-sm text-imperial-black/50" />

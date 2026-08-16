@@ -35,7 +35,12 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-imperial-ivory p-6 shadow-elevated focus:outline-none",
+        // `max-h` + `overflow-y-auto` : sur un petit écran (téléphone en
+        // paysage, ou un contenu de dialogue plus haut que prévu), la boîte
+        // défile en interne plutôt que de déborder au-delà du viewport —
+        // `html`/`body` ne défilent jamais eux-mêmes (voir globals.css), donc
+        // sans ce filet un contenu trop haut serait tout simplement inatteignable.
+        "fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg bg-imperial-ivory p-6 shadow-elevated focus:outline-none",
         className
       )}
       {...props}

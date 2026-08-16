@@ -81,3 +81,18 @@ export function buildWhatsAppUrl(phoneNumber: string, message: string): string {
   const digits = phoneNumber.replace(/\D/g, "");
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
+
+/**
+ * Reformate un numéro Mobile Money camerounais au fil de la saisie
+ * (`+237 6XX XXX XXX`) — l'utilisateur peut taper ou coller n'importe quel
+ * format (avec ou sans indicatif, espaces, tirets…), seuls les chiffres
+ * comptent : on retire un éventuel "237" déjà présent en tête pour ne
+ * jamais le dupliquer, puis on regroupe les 9 chiffres restants par 3.
+ */
+export function formatCameroonPhoneInput(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  const local = (digits.startsWith("237") ? digits.slice(3) : digits).slice(0, 9);
+  if (!local) return "";
+  const groups = [local.slice(0, 3), local.slice(3, 6), local.slice(6, 9)].filter(Boolean);
+  return `+237 ${groups.join(" ")}`;
+}
